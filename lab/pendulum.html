@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cart-pole</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="icon" type="image/x-icon" href="../favicon.gif">
+    <style>
+        canvas { display: block; width: 100%; max-width: 760px; border: 1px solid #000; touch-action: none; }
+        .hud { font-size: 14px; margin: 10px 0; }
+        .controls button {
+            font: inherit; font-size: 14px; background: #fff; color: #000;
+            border: 1px solid #000; padding: 8px 16px; margin-right: 10px; cursor: pointer;
+        }
+        .controls button:active { background: #000; color: #fff; }
+        .controls label { font-size: 14px; margin-left: 10px; }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <p><a href="../lab.html">← lab</a></p>
+        <h1>Cart-pole</h1>
+        <p>Keep the pendulum upright. Arrow keys or the buttons push the cart, and once you have survived a few seconds, random shoves start arriving, each telegraphed by an arrow a moment before it hits. Tick the box to hand control to an LQR and try to knock it over.</p>
+
+        <canvas id="c" width="760" height="360"></canvas>
+
+        <p class="hud">upright: <span id="time">0.0</span> s · best: <span id="best">0.0</span> s · u = <span id="force">0</span> N</p>
+
+        <div class="controls">
+            <button id="btnL">◀ push</button>
+            <button id="btnR">push ▶</button>
+            <button id="btnReset">reset</button>
+            <label><input type="checkbox" id="lqr"> LQR control</label>
+        </div>
+
+        <details>
+            <summary>How it works</summary>
+            <p>The nonlinear cart-pole dynamics are integrated with RK4 at 240 steps per second. The LQR gain matrix is computed in your browser at load time by iterating the discrete Riccati equation on a numerically linearized model of the same dynamics, and in LQR mode your pushes and the scheduled shoves enter the loop as disturbance forces the controller has to reject.</p>
+        </details>
+
+        <hr>
+        <p><small>&copy; 2026 Neel Tripathi</small></p>
+    </div>
+
+<script>
+"use strict";
+// ---------- parameters ----------
+const M = 1.0;      // cart mass, kg
+const m = 0.2;      // pole mass, kg
+const l = 0.6;      // pole half-length (pivot to CoM), m
+const g = 9.81;
+const Fmag = 12;    // keyboard push, N
+const FmagBtn = 6;  // on-screen buttons push gentler for touch players
+const Fdist = 8;    // disturbance pulse, N
+const dt = 1/240;   // physics step
+const xLim = 2.2;   // track half-width, m
+const thLim = 0.9;  // fail angle, rad
+
+// state: [x, xdot, theta, thetadot], theta = 0 upright
+let s, tUp, best = 0, failed;
+let distNext = 0, distDir = 0, distUntil = 0, warnFrom = 0;
+function reset() {
+    s = [0, 0, (Math.random()-0.5)*0.04, 0]; tUp = 0; failed = false;
+    distNext = 3 + 4*Math.random() + 4*Math.random(); distDir = 0; distUntil = 0; warnFrom = 0;
+}
+reset();
+
+// ---------- dynamics ----------
+function deriv(s, F) {
+    const [x, xd, th, thd] = s;
+    const sin = Math.sin(th), cos = Math.cos(th);
+    const tot = M + m;
+    const tmp = (F + m*l*thd*thd*sin) / tot;
+    const thacc = (g*sin - cos*tmp) / (l*(4/3 - m*cos*cos/tot));
+    const xacc = tmp - m*l*thacc*cos/tot;
+    return [xd, xacc, thd, thacc];
+}
+function rk4(s, F, h) {
+    const k1 = deriv(s, F);
+    const k2 = deriv(s.map((v,i) => v + h/2*k1[i]), F);
+    const k3 = deriv(s.map((v,i) => v + h/2*k2[i]), F);
+    const k4 = deriv(s.map((v,i) => v + h*k3[i]), F);
+    return s.map((v,i) => v + h/6*(k1[i] + 2*k2[i] + 2*k3[i] + k4[i]));
+}
+
+// ---------- LQR (computed at load) ----------
+// 4x4 helpers
+const mmul = (A,B) => A.map((r,i) => B[0].map((_,j) => r.reduce((a,_,k) => a + A[i][k]*B[k][j], 0)));
+const madd = (A,B) => A.map((r,i) => r.map((v,j) => v + B[i][j]));
+const msub = (A,B) => A.map((r,i) => r.map((v,j) => v - B[i][j]));
+const T = A => A[0].map((_,j) => A.map(r => r[j]));
+
+// A, B derived numerically from deriv() about the upright equilibrium:
+function linearize() {
+    const eps = 1e-5, s0 = [0,0,0,0];
+    const A = [], f0 = deriv(s0, 0);
+    for (let j = 0; j < 4; j++) {
+        const sp = [0,0,0,0]; sp[j] = eps;
+        const fp = deriv(sp, 0);
+        A.push(fp.map((v,i) => (v - f0[i]) / eps));
+    }
+    const Acont = T(A); // columns were states
+    const fB = deriv(s0, eps);
+    const Bcont = fB.map((v,i) => [(v - f0[i]) / eps]);
+    return [Acont, Bcont];
+}
+const [Ac, Bc] = linearize();
+// discretize (Euler is fine at this dt for gain synthesis)
+const hd = 1/60;
+const I4 = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]];
+const Ad = madd(I4, Ac.map(r => r.map(v => v*hd)));
+const Bd = Bc.map(r => [r[0]*hd]);
+const Q = [[2,0,0,0],[0,0.5,0,0],[0,0,12,0],[0,0,0,1]];
+const R = 0.05;
+
+let P = Q.map(r => r.slice());
+for (let it = 0; it < 3000; it++) {
+    const BtP = mmul(T(Bd), P);
+    const scal = R + mmul(BtP, Bd)[0][0];
+    const K = mmul(BtP, Ad).map(r => r.map(v => v/scal));   // 1x4
+    const AmBK = msub(Ad, mmul(Bd, K));
+    P = madd(madd(mmul(mmul(T(AmBK), P), AmBK),
+                  mmul(T(K), K).map(r => r.map(v => v*R))), Q);
+}
+const BtP = mmul(T(Bd), P);
+const Kgain = mmul(BtP, Ad)[0].map(v => v / (R + mmul(BtP, Bd)[0][0]));
+
+// ---------- input ----------
+let dir = 0;
+const keys = {};
+addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { keys[e.key] = true; e.preventDefault(); }
+    if (e.key === 'r') reset();
+});
+addEventListener('keyup', e => { keys[e.key] = false; });
+function holdBtn(id, d) {
+    const b = document.getElementById(id);
+    const on = e => { e.preventDefault(); dir = d; };
+    const off = () => { dir = 0; };
+    b.addEventListener('pointerdown', on);
+    b.addEventListener('pointerup', off);
+    b.addEventListener('pointerleave', off);
+}
+holdBtn('btnL', -1); holdBtn('btnR', 1);
+document.getElementById('btnReset').addEventListener('click', reset);
+
+// ---------- loop ----------
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const px = mtr => cv.width/2 + mtr * (cv.width/(2*xLim + 1));
+let acc = 0, last = performance.now(), uShow = 0;
+
+function step(F) { s = rk4(s, F, dt); }
+
+function frame(now) {
+    acc += Math.min(now - last, 50) / 1000; last = now;
+    const kdir = (keys.ArrowRight ? 1 : 0) - (keys.ArrowLeft ? 1 : 0);
+    const push = kdir ? kdir * Fmag : dir * FmagBtn;
+    const auto = document.getElementById('lqr').checked;
+
+    while (acc >= dt) {
+        let F = push;
+        if (auto && !failed) {
+            let u = -(Kgain[0]*s[0] + Kgain[1]*s[1] + Kgain[2]*s[2] + Kgain[3]*s[3]);
+            u = Math.max(-40, Math.min(40, u));
+            F = u + push;
+            uShow = u;
+        } else uShow = push;
+        if (!failed) {
+            // telegraphed disturbances: warn 0.8 s ahead, shove for 0.3 s
+            if (distDir === 0 && tUp > distNext - 0.8) {
+                distDir = Math.random() < 0.5 ? -1 : 1;
+                warnFrom = distNext - 0.8; distUntil = distNext + 0.3;
+            }
+            if (distDir !== 0 && tUp > distNext && tUp < distUntil) F += distDir * Fdist;
+            if (distDir !== 0 && tUp >= distUntil) {
+                distDir = 0;
+                distNext = tUp + 4 + 4*Math.random();
+            }
+            step(F);
+            tUp += dt;
+            if (Math.abs(s[2]) > thLim || Math.abs(s[0]) > xLim) {
+                failed = true;
+                best = Math.max(best, tUp);
+            }
+        }
+        acc -= dt;
+    }
+
+    // draw
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    const groundY = 250;
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, groundY + 14); ctx.lineTo(cv.width, groundY + 14); ctx.stroke();
+    // track limits
+    ctx.setLineDash([3,3]);
+    [-xLim, xLim].forEach(v => { ctx.beginPath(); ctx.moveTo(px(v), groundY - 40); ctx.lineTo(px(v), groundY + 14); ctx.stroke(); });
+    ctx.setLineDash([]);
+    // cart
+    const cx = px(s[0]);
+    ctx.strokeRect(cx - 30, groundY - 12, 60, 26);
+    // pole
+    const tipX = cx + Math.sin(s[2]) * 2*l * (cv.width/(2*xLim + 1));
+    const tipY = groundY - 12 - Math.cos(s[2]) * 2*l * (cv.width/(2*xLim + 1));
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(cx, groundY - 12); ctx.lineTo(tipX, tipY); ctx.stroke();
+    ctx.beginPath(); ctx.arc(tipX, tipY, 6, 0, 7); ctx.fillStyle = '#000'; ctx.fill();
+    ctx.lineWidth = 1;
+
+    // disturbance arrow: appears on the side the shove comes from
+    if (!failed && distDir !== 0 && tUp > warnFrom) {
+        const ay = groundY - 26;
+        const axBase = cx - distDir * 78, tip = cx - distDir * 44;
+        const active = tUp > distNext;
+        ctx.strokeStyle = ctx.fillStyle = '#000';
+        ctx.lineWidth = active ? 3 : 1.5;
+        ctx.beginPath(); ctx.moveTo(axBase, ay); ctx.lineTo(tip, ay); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(tip + distDir*8, ay);
+        ctx.lineTo(tip, ay - 5); ctx.lineTo(tip, ay + 5);
+        ctx.closePath(); ctx.fill();
+        ctx.lineWidth = 1;
+    }
+    if (failed) {
+        ctx.font = '16px Inter, sans-serif';
+        ctx.fillText('down. press reset (or r)', cv.width/2 - 90, 60);
+    }
+
+    document.getElementById('time').textContent = tUp.toFixed(1);
+    document.getElementById('best').textContent = best.toFixed(1);
+    document.getElementById('force').textContent = uShow.toFixed(1);
+    requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+
+</html>

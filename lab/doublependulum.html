@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>double pendulum</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="icon" type="image/x-icon" href="../favicon.gif">
+    <style>
+        canvas { display: block; width: 100%; max-width: 760px; border: 1px solid #000; touch-action: none; }
+        .hud { font-size: 14px; margin: 10px 0; }
+        button {
+            font: inherit; font-size: 14px; background: #fff; color: #000;
+            border: 1px solid #000; padding: 8px 16px; margin-right: 10px; cursor: pointer;
+        }
+        button:active { background: #000; color: #fff; }
+        label { font-size: 14px; margin-left: 10px; }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <p><a href="../lab.html">← lab</a></p>
+        <h1>Double pendulum</h1>
+        <p>Grab either mass and throw it. The trace follows the second mass, and since the system is chaotic, two throws that look identical will part ways within a few swings.</p>
+
+        <canvas id="c" width="760" height="480"></canvas>
+
+        <p class="hud">energy: <span id="energy">0</span> J · <span id="state">throw me</span></p>
+
+        <div>
+            <button id="reset">reset</button>
+            <button id="clear">clear trace</button>
+            <label><input type="checkbox" id="damp"> damping</label>
+        </div>
+
+        <details>
+            <summary>How it works</summary>
+            <p>The full nonlinear equations of motion are integrated with RK4 at 240 steps per second, and the energy readout is really a check on that integrator: it should hold nearly constant with damping off and decay smoothly with it on. Flinging works by tracking the pointer's recent angular motion and handing the released mass that velocity.</p>
+        </details>
+
+        <hr>
+        <p><small>&copy; 2026 Neel Tripathi</small></p>
+    </div>
+
+<script>
+"use strict";
+const m1 = 1, m2 = 1, l1 = 1, l2 = 1, g = 9.81;
+const dt = 1/240;
+
+let s;   // [th1, w1, th2, w2], angles from vertical-down
+function reset() { s = [Math.PI*0.9, 0, Math.PI*0.5, 0]; trace.length = 0; }
+
+function deriv(st) {
+    const [t1, w1, t2, w2] = st;
+    const d = t1 - t2, den = 2*m1 + m2 - m2*Math.cos(2*t1 - 2*t2);
+    const a1 = (-g*(2*m1 + m2)*Math.sin(t1) - m2*g*Math.sin(t1 - 2*t2)
+                - 2*Math.sin(d)*m2*(w2*w2*l2 + w1*w1*l1*Math.cos(d))) / (l1*den);
+    const a2 = (2*Math.sin(d)*(w1*w1*l1*(m1 + m2) + g*(m1 + m2)*Math.cos(t1)
+                + w2*w2*l2*m2*Math.cos(d))) / (l2*den);
+    return [w1, a1, w2, a2];
+}
+function rk4(st, h) {
+    const k1 = deriv(st);
+    const k2 = deriv(st.map((v,i) => v + h/2*k1[i]));
+    const k3 = deriv(st.map((v,i) => v + h/2*k2[i]));
+    const k4 = deriv(st.map((v,i) => v + h*k3[i]));
+    return st.map((v,i) => v + h/6*(k1[i] + 2*k2[i] + 2*k3[i] + k4[i]));
+}
+function energy(st) {
+    const [t1, w1, t2, w2] = st;
+    const KE1 = 0.5*m1*l1*l1*w1*w1;
+    const x2d = l1*w1*Math.cos(t1) + l2*w2*Math.cos(t2);
+    const y2d = l1*w1*Math.sin(t1) + l2*w2*Math.sin(t2);
+    const KE2 = 0.5*m2*(x2d*x2d + y2d*y2d);
+    const PE = -(m1 + m2)*g*l1*Math.cos(t1) - m2*g*l2*Math.cos(t2)
+               + (m1 + m2)*g*l1 + m2*g*l2;   // zero at hanging rest
+    return KE1 + KE2 + PE;
+}
+
+// ---------- geometry / drawing ----------
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const ox = cv.width/2, oy = cv.height/2, scale = 105;
+const p1 = () => [ox + scale*l1*Math.sin(s[0]), oy + scale*l1*Math.cos(s[0])];
+const p2 = () => { const a = p1(); return [a[0] + scale*l2*Math.sin(s[2]), a[1] + scale*l2*Math.cos(s[2])]; };
+const trace = [];
+reset();
+
+// ---------- dragging ----------
+let drag = null;          // {bob: 1|2, hist: [[t, angle], ...]}
+function canvasPos(e) {
+    const r = cv.getBoundingClientRect();
+    return [(e.clientX - r.left) * cv.width/r.width, (e.clientY - r.top) * cv.height/r.height];
+}
+cv.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    const [mx, my] = canvasPos(e);
+    const d1 = Math.hypot(...p1().map((v,i) => v - [mx,my][i]));
+    const d2 = Math.hypot(...p2().map((v,i) => v - [mx,my][i]));
+    drag = { bob: d2 <= d1 ? 2 : 1, hist: [] };
+    cv.setPointerCapture(e.pointerId);
+});
+cv.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const [mx, my] = canvasPos(e);
+    let ang;
+    if (drag.bob === 1) {
+        ang = Math.atan2(mx - ox, my - oy);
+        s[0] = ang; s[1] = 0; s[3] = 0;
+    } else {
+        const a = p1();
+        ang = Math.atan2(mx - a[0], my - a[1]);
+        s[2] = ang; s[1] = 0; s[3] = 0;
+    }
+    drag.hist.push([performance.now()/1000, ang]);
+    if (drag.hist.length > 6) drag.hist.shift();
+});
+function endDrag() {
+    if (!drag) return;
+    // fling: angular velocity from recent pointer history
+    const h = drag.hist;
+    if (h.length >= 2) {
+        const [t0, a0] = h[0], [t1v, a1] = h[h.length - 1];
+        let da = a1 - a0;
+        while (da > Math.PI) da -= 2*Math.PI;
+        while (da < -Math.PI) da += 2*Math.PI;
+        const wv = t1v > t0 ? da / (t1v - t0) : 0;
+        const wClamped = Math.max(-12, Math.min(12, wv));
+        if (drag.bob === 1) s[1] = wClamped; else s[3] = wClamped;
+    }
+    drag = null;
+}
+cv.addEventListener('pointerup', endDrag);
+cv.addEventListener('pointercancel', endDrag);
+
+document.getElementById('reset').addEventListener('click', reset);
+document.getElementById('clear').addEventListener('click', () => { trace.length = 0; });
+
+// ---------- loop ----------
+let acc = 0, last = performance.now();
+function frame(now) {
+    acc += Math.min(now - last, 50)/1000; last = now;
+    const damping = document.getElementById('damp').checked;
+    while (acc >= dt) {
+        if (!drag) {
+            s = rk4(s, dt);
+            if (damping) { s[1] *= (1 - 0.25*dt); s[3] *= (1 - 0.25*dt); }
+        }
+        acc -= dt;
+    }
+
+    const a = p1(), b = p2();
+    trace.push([b[0], b[1]]);
+    if (trace.length > 900) trace.shift();
+
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    // trace, fading with age
+    for (let i = 1; i < trace.length; i++) {
+        ctx.strokeStyle = 'rgba(0,0,0,' + (0.02 + 0.28*i/trace.length) + ')';
+        ctx.beginPath();
+        ctx.moveTo(trace[i-1][0], trace[i-1][1]);
+        ctx.lineTo(trace[i][0], trace[i][1]);
+        ctx.stroke();
+    }
+    // rods + masses
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+    ctx.lineWidth = 1;
+    ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.arc(ox, oy, 4, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(a[0], a[1], 10, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(b[0], b[1], 10, 0, 7); ctx.fill();
+
+    document.getElementById('energy').textContent = energy(s).toFixed(2);
+    document.getElementById('state').textContent = drag ? 'aiming' : 'running';
+    requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+
+</html>

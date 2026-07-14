@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>suspension</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="icon" type="image/x-icon" href="../favicon.gif">
+    <style>
+        canvas { display: block; width: 100%; max-width: 760px; border: 1px solid #000; }
+        .sliders { margin: 15px 0; font-size: 14px; }
+        .sliders label { display: block; margin-bottom: 8px; }
+        .sliders input[type=range] { width: 60%; vertical-align: middle; accent-color: #000; }
+        .hud { font-size: 14px; margin: 10px 0; }
+        button {
+            font: inherit; font-size: 14px; background: #fff; color: #000;
+            border: 1px solid #000; padding: 8px 16px; margin-right: 10px; cursor: pointer;
+        }
+        button:active { background: #000; color: #fff; }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <p><a href="../lab.html">← lab</a></p>
+        <h1>Suspension tuner</h1>
+        <p>A car drives over a road that never repeats, and each corner of its suspension is a controller you tune live with the sliders while it drives. Kp acts like a spring, Kd like a damper, and the harshness number is the running RMS of vertical body acceleration, so soft and well damped beats stiff.</p>
+
+        <canvas id="c" width="760" height="380"></canvas>
+
+        <div class="sliders">
+            <label>Kp <input type="range" id="kp" min="0" max="200" step="1" value="60"> <span id="kpv"></span></label>
+            <label>Kd <input type="range" id="kd" min="0" max="60" step="0.5" value="15"> <span id="kdv"></span></label>
+        </div>
+
+        <p class="hud">harshness: <span id="rms">–</span> m/s²</p>
+
+        <button id="newroad">new road</button>
+
+        <details>
+            <summary>How it works</summary>
+            <p>The car is a half-car model with heave and pitch, and each corner carries half the static weight as preload with a PD controller acting on top of it, trying to hold that corner of the body on the dashed target line above the road. Too little Kp lets the body follow every rise and dip of the terrain, too little Kd lets it wallow after each bump, and too much Kd feeds the road texture straight into the chassis. The terrain itself is a handful of sine waves whose amplitudes and frequencies wander on a mean-reverting random walk, drifting freely but always pulled back toward their baseline, with the phase integrated so frequency changes never cause jumps in the surface.</p>
+        </details>
+
+        <hr>
+        <p><small>&copy; 2026 Neel Tripathi</small></p>
+    </div>
+
+<script>
+"use strict";
+// half-car model: heave y and pitch phi, one preloaded PD per corner between
+// the (kinematic) wheels and the body. The road is generated ahead of the
+// car into a sample buffer: each sine component's amplitude and frequency
+// follow an Ornstein-Uhlenbeck walk (mean-reverting, bounded in variance),
+// and the phase is integrated so frequency changes never cause jumps.
+const m = 1, I = 0.48, L = 2.4, g = 9.81;
+const dt = 1/240, v = 9, h0 = 0.9;
+const uMax = 60;
+const preload = m*g/2;      // each corner carries half the static weight
+const stopGap = 0.15;
+const ppm = 60;
+
+// ---------- evolving road ----------
+const DX = 0.05;
+const thA = 0.4, thW = 0.15;                 // mean-reversion rates
+function gauss() { return (Math.random() + Math.random() + Math.random() - 1.5) * 2; }
+
+let comps, samples, sampleX0, genX;
+function newRoad() {
+    const base = [0.06, 0.03, 0.08, 0.025];
+    comps = base.map(b => ({
+        aMu: b * (0.7 + 0.6*Math.random()), a: 0,
+        wMu: 0.4 + 3.0*Math.random(), w: 0,
+        phi: Math.random() * 6.28
+    }));
+    comps.forEach(c => { c.a = c.aMu; c.w = c.wMu; });
+    samples = []; sampleX0 = -20; genX = -20;
+}
+function genTo(xNeed) {
+    while (genX < xNeed) {
+        genX += DX;
+        const dtc = DX / v;
+        let s = 0;
+        for (const c of comps) {
+            const sigA = 0.5*c.aMu*Math.sqrt(2*thA);   // stationary sd ~ 50% of mean
+            const sigW = 0.35*Math.sqrt(2*thW);
+            c.a += thA*(c.aMu - c.a)*dtc + sigA*Math.sqrt(dtc)*gauss();
+            c.a = Math.max(0, Math.min(2.5*c.aMu, c.a));
+            c.w += thW*(c.wMu - c.w)*dtc + sigW*Math.sqrt(dtc)*gauss();
+            c.w = Math.max(0.2, Math.min(4, c.w));
+            c.phi += c.w * DX;
+            s += c.a * Math.sin(c.phi);
+        }
+        samples.push(s);
+    }
+}
+function trimBehind(xMin) {
+    const drop = Math.floor((xMin - sampleX0) / DX);
+    if (drop > 0) { samples.splice(0, drop); sampleX0 += drop*DX; }
+}
+function road(x) {
+    const f = (x - sampleX0)/DX, i = Math.floor(f), t = f - i;
+    return samples[i]*(1 - t) + samples[i + 1]*t;
+}
+const roadD = x => (road(x + DX) - road(x - DX)) / (2*DX) * v;
+
+// ---------- car state ----------
+let x, y, yd, phi, phid;
+function reset() {
+    x = 0; y = h0; yd = 0; phi = 0; phid = 0;
+    genTo(x + 30);
+}
+newRoad(); reset();
+
+const sliders = ['kp','kd'].map(id => document.getElementById(id));
+document.getElementById('newroad').addEventListener('click', () => { newRoad(); reset(); });
+
+let rmsAcc = 0;
+const ema = 1 - Math.exp(-dt/2);
+
+function physics(Kp, Kd) {
+    x += v*dt;
+    genTo(x + 12);
+    trimBehind(x - 8);
+    const xf = x + L/2, xr = x - L/2;
+    const rf = road(xf), rr = road(xr);
+    const yf = y + phi*L/2, yr = y - phi*L/2;
+    const yfd = yd + phid*L/2, yrd = yd - phid*L/2;
+    const eF = rf + h0 - yf, eR = rr + h0 - yr;
+    let uF = preload + Kp*eF + Kd*(roadD(xf) - yfd);
+    let uR = preload + Kp*eR + Kd*(roadD(xr) - yrd);
+    uF = Math.max(-uMax, Math.min(uMax, uF));
+    uR = Math.max(-uMax, Math.min(uMax, uR));
+    if (yf - rf < stopGap) uF += 400*(stopGap - (yf - rf)) - 25*yfd;
+    if (yr - rr < stopGap) uR += 400*(stopGap - (yr - rr)) - 25*yrd;
+    const ydd = (uF + uR)/m - g;
+    const phidd = (uF - uR)*(L/2)/I;
+    yd += ydd*dt; y += yd*dt;
+    phid += phidd*dt; phi += phid*dt;
+    rmsAcc += ema * (ydd*ydd - rmsAcc);
+}
+
+// ---------- drawing ----------
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const camX = 260, base = 300;
+const sx = wx => camX + (wx - x)*ppm;
+const sy = wy => base - wy*ppm;
+
+let acc = 0, last = performance.now();
+function frame(now) {
+    acc += Math.min(now - last, 50)/1000; last = now;
+    const [Kp, Kd] = sliders.map(s => parseFloat(s.value));
+    document.getElementById('kpv').textContent = Kp.toFixed(0);
+    document.getElementById('kdv').textContent = Kd.toFixed(1);
+    while (acc >= dt) { physics(Kp, Kd); acc -= dt; }
+
+    const Wc = cv.width, Hc = cv.height;
+    ctx.clearRect(0, 0, Wc, Hc);
+    const x0v = x - camX/ppm, x1v = x + (Wc - camX)/ppm;
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let wx = x0v; wx <= x1v; wx += 0.08) {
+        const X = sx(wx), Y = sy(road(wx));
+        wx === x0v ? ctx.moveTo(X, Y) : ctx.lineTo(X, Y);
+    }
+    ctx.stroke();
+    ctx.lineWidth = 1; ctx.strokeStyle = '#999'; ctx.setLineDash([5,5]);
+    ctx.beginPath();
+    for (let wx = x0v; wx <= x1v; wx += 0.08) {
+        const X = sx(wx), Y = sy(road(wx) + h0);
+        wx === x0v ? ctx.moveTo(X, Y) : ctx.lineTo(X, Y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    const xf = x + L/2, xr = x - L/2;
+    const rf = road(xf), rr = road(xr);
+    ctx.strokeStyle = '#000';
+    [[xf, rf], [xr, rr]].forEach(([wx, r]) => {
+        ctx.beginPath(); ctx.arc(sx(wx), sy(r + 0.13), 0.13*ppm, 0, 7); ctx.stroke();
+    });
+    const yf = y + phi*L/2, yr = y - phi*L/2;
+    ctx.strokeStyle = '#555';
+    ctx.beginPath(); ctx.moveTo(sx(xf), sy(rf + 0.13)); ctx.lineTo(sx(xf), sy(yf)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(sx(xr), sy(rr + 0.13)); ctx.lineTo(sx(xr), sy(yr)); ctx.stroke();
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(sx(xr), sy(yr));
+    ctx.lineTo(sx(xf), sy(yf));
+    ctx.lineTo(sx(xf), sy(yf + 0.32));
+    ctx.lineTo(sx(x + 0.35), sy((yf + yr)/2 + phi*0.35 + 0.62));
+    ctx.lineTo(sx(x - 0.75), sy((yf + yr)/2 - phi*0.75 + 0.62));
+    ctx.lineTo(sx(xr), sy(yr + 0.32));
+    ctx.closePath(); ctx.stroke();
+    ctx.lineWidth = 1;
+
+    document.getElementById('rms').textContent = Math.sqrt(rmsAcc).toFixed(1);
+    requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+
+</html>

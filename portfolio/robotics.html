@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>robotics</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="icon" type="image/x-icon" href="../favicon.gif">
+</head>
+
+<body>
+    <div class="container">
+        <nav class="site">
+            <a href="../index.html">home</a>
+            <a href="../about.html">about</a>
+            <a href="index.html">portfolio</a>
+        </nav>
+
+        <h1>Robotics</h1>
+
+        <div class="entry">
+            <h2 id="cooper">Cooper, a midair reorienting jumper</h2>
+            <p class="label">Hawkes Lab, MS project · 2025–2026</p>
+            <p>Cooper is a jumping robot that fixes its orientation in flight using a reaction wheel, named for what the reorientation is for: landing aligned so the leg can recoup the jump energy. I designed and assembled the full system, from the mechanical structure and BLDC actuation through the IMU integration and the embedded electronics, then developed a reduced order dynamics model and compared control strategies in MATLAB, including standard LQR, a braking wheel approach, and an optimized trajectory T-LQR. The best of them runs in C++ on an ESP32, estimating and correcting attitude in real time during ballistic flight on a spring loaded launcher, with telemetry streamed over WiFi for debugging. Code is on <a href="https://github.com/NLT319/Reorienting_Jumper">GitHub</a>.</p>
+            <!-- TODO: verify repo URL, hero image, maybe the launcher video -->
+        </div>
+
+        <div class="entry">
+            <h2 id="inertial-jumper">Inertial jumping robot</h2>
+            <p class="label">Hawkes Lab · 2022–2024</p>
+            <p>A separate robot from Cooper, this one an inertial jumper whose energy transmission I redesigned, improving jump efficiency by 75%. <!-- TODO: a sentence on what the redesign actually changed, image --></p>
+        </div>
+
+        <div class="entry">
+            <h2 id="vine-robots">Vine robots</h2>
+            <p class="label">Hawkes Lab · 2023–2025</p>
+            <p>I contributed structural and mechanical design to the lab's vine robot platforms, including the tip mount mechanism, lightweight frame, and electronics mounting for a large industrial inspection robot, and built the pneumatic high speed test setup used to characterize rapid eversion. The work fed into two publications I coauthored: "High-Velocity, Pressure-Driven Eversion for Rapid Vine Robots" in IEEE RA-L, and "Large-Scale Vine Robots for Industrial Inspection" in IEEE RAM. <!-- TODO: paper links, images --></p>
+        </div>
+
+        <div class="entry">
+            <h2 id="cart-pendulum">Cart-pendulum stabilization</h2>
+            <p class="label">Control systems lab · 2025</p>
+            <p>Identified the plant with both parametric and nonparametric methods, then designed an LQR feedback controller with Kalman state estimation to stabilize the underactuated cart-pendulum, validated against encoder and motor torque data from the real hardware. <!-- TODO: link the demo video --></p>
+        </div>
+
+        <div class="entry">
+            <h2 id="double-pendulum-arm">Double pendulum arm</h2>
+            <p class="label">Robotics design and advanced control courses · 2025–2026</p>
+            <p>The same double pendulum robotic arm across two courses: first stabilized with PID control, then given MPC based trajectory optimization to plan and track motion. <!-- TODO: plots or video --></p>
+        </div>
+
+        <hr>
+        <p><small>&copy; 2026 Neel Tripathi</small></p>
+    </div>
+</body>
+
+</html>

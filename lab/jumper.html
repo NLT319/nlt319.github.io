@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cooper</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="icon" type="image/x-icon" href="../favicon.gif">
+    <style>
+        canvas { display: block; width: 100%; max-width: 760px; border: 1px solid #000; touch-action: none; }
+        .hud { font-size: 14px; margin: 10px 0; }
+        button {
+            font: inherit; font-size: 14px; background: #fff; color: #000;
+            border: 1px solid #000; padding: 8px 16px; margin-right: 10px; cursor: pointer;
+        }
+        button:active { background: #000; color: #fff; }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <p><a href="../lab.html">← lab</a></p>
+        <h1>Stick the landing</h1>
+        <p>This is a cartoon of <a href="../portfolio/robotics.html#cooper">Cooper</a>, a jumping robot I built that reorients itself in midair with a reaction wheel. It launches with a random tumble and needs to arrive aligned with the dashed landing line, foot first, so the leg can recoup the jump energy, which is where the name comes from. Land within about eight degrees of the line, and slowly, to stick it, and if it keeps crashing, the show me button hands a round to the controller.</p>
+
+        <canvas id="c" width="760" height="420"></canvas>
+
+        <p class="hud">round <span id="round">1</span> · stuck: <span id="stuck">0</span> · streak: <span id="streak">0</span></p>
+
+        <div>
+            <button id="btnL">⟲ torque</button>
+            <button id="btnR">torque ⟳</button>
+            <button id="btnGo">launch</button>
+            <button id="btnShow">show me</button>
+        </div>
+
+        <details>
+            <summary>How it works</summary>
+            <p>The body and its reaction wheel exchange angular momentum and nothing else, so torquing the wheel one way spins the body the other, and the bar at the top shows how close the wheel is to saturation, past which you have no authority left in that direction. The body leaves the ground aligned with its takeoff velocity, and since the ballistic arc is symmetric, the landing line is the takeoff line mirrored about vertical. The show me button runs a saturated PD controller on attitude error, which is close in shape to what the real robot runs on its ESP32.</p>
+        </details>
+
+        <hr>
+        <p><small>&copy; 2026 Neel Tripathi</small></p>
+    </div>
+
+<script>
+"use strict";
+// body + reaction wheel, torque exchange only: Ib*thd + Iw*w is conserved
+// in flight. The body launches aligned with the takeoff velocity (+beta
+// from vertical) and must land aligned with the mirrored landing velocity
+// (-beta), foot first, tumble cancelled.
+const Ib = 0.01, Iw = 0.001;
+const tauMax = 0.08, wMax = 200;
+const g = 9.81, dt = 1/240;
+const vy0 = 13, vx = 7;   // ~2.65 s of flight
+const x0 = 2.3;
+const tFlight = 2*vy0/g;
+const xLand = x0 + vx*tFlight;
+const beta = Math.atan2(vx, vy0);    // launch angle from vertical
+const th0 = beta, thTarget = -beta;  // mirrored about gravity
+const thTol = 0.14, thdTol = 1.2;
+const thOk = 0.35, thdOk = 3.0;
+const ppm = 24;
+
+let th, thd, w, x, y, vy, phase, verdict, round = 1, stuck = 0, streak = 0, auto = false;
+function newRound() {
+    th = th0; w = 0; x = x0; y = 0; vy = 0;
+    const sign = Math.random() < 0.5 ? -1 : 1;
+    thd = sign * (2 + Math.random() * 4);
+    phase = 'ready'; verdict = ''; auto = false;
+}
+newRound();
+
+let dir = 0;
+const keys = {};
+addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { keys[e.key] = true; e.preventDefault(); }
+    if (e.key === ' ') { launch(); e.preventDefault(); }
+});
+addEventListener('keyup', e => { keys[e.key] = false; });
+function holdBtn(id, d) {
+    const bEl = document.getElementById(id);
+    bEl.addEventListener('pointerdown', e => { e.preventDefault(); dir = d; });
+    bEl.addEventListener('pointerup', () => { dir = 0; });
+    bEl.addEventListener('pointerleave', () => { dir = 0; });
+}
+holdBtn('btnL', -1); holdBtn('btnR', 1);
+document.getElementById('btnGo').addEventListener('click', launch);
+document.getElementById('btnShow').addEventListener('click', () => {
+    if (phase === 'ready') { auto = true; launch(); }
+});
+
+function launch() {
+    if (phase === 'ready') { phase = 'flight'; vy = vy0; }
+    else if (phase === 'landed') { round++; newRound(); }
+}
+
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+let acc = 0, last = performance.now();
+
+function physics() {
+    const kdir = (keys.ArrowRight ? 1 : 0) - (keys.ArrowLeft ? 1 : 0);
+    let want;
+    if (auto) {
+        // saturated PD on attitude error, the shape of the real controller
+        const err = wrap(th - thTarget);
+        want = Ib * (16*err + 8*thd);
+        want = Math.max(-tauMax, Math.min(tauMax, want));
+    } else {
+        want = (dir || kdir) * tauMax;
+    }
+    let tau = want;
+    if ((w >= wMax && want > 0) || (w <= -wMax && want < 0)) tau = 0;
+    thd += (-tau / Ib) * dt;
+    w   += ( tau / Iw) * dt;
+    w = Math.max(-wMax, Math.min(wMax, w));
+    th += thd * dt;
+    vy -= g * dt;
+    y += vy * dt;
+    x += vx * dt;
+    if (y <= 0 && vy < 0) {
+        y = 0; phase = 'landed';
+        const a = Math.abs(wrap(th - thTarget)), r = Math.abs(thd);
+        if (a < thTol && r < thdTol) { verdict = (auto ? 'PD controller: stuck it' : 'stuck it'); if (!auto) { stuck++; streak++; } }
+        else if (a < thOk && r < thdOk) { verdict = 'close to the line, but rough'; if (!auto) streak = 0; }
+        else { verdict = 'crashed'; if (!auto) streak = 0; }
+        document.getElementById('stuck').textContent = stuck;
+        document.getElementById('streak').textContent = streak;
+    }
+}
+function wrap(a) { while (a > Math.PI) a -= 2*Math.PI; while (a < -Math.PI) a += 2*Math.PI; return a; }
+
+function drawCooper(px, py) {
+    const rod = 62;
+    ctx.save();
+    ctx.translate(px, py); ctx.rotate(th);
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(0, rod/2); ctx.lineTo(0, -rod/2); ctx.stroke();
+    ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.moveTo(-16, rod/2); ctx.lineTo(16, rod/2); ctx.stroke();
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(0, -rod/2 + 16, 12, 0, 7); ctx.stroke();
+    const wa = (performance.now()/1000 * w * 0.05) % (2*Math.PI);
+    ctx.beginPath(); ctx.moveTo(0, -rod/2 + 16);
+    ctx.lineTo(12*Math.cos(wa), -rod/2 + 16 + 12*Math.sin(wa)); ctx.stroke();
+    ctx.restore();
+    ctx.lineWidth = 1;
+}
+
+// dashed attitude guide: body-axis line for angle a, planted at ground x
+function guide(gx, ground, a) {
+    ctx.strokeStyle = '#999'; ctx.setLineDash([3,3]);
+    ctx.beginPath();
+    ctx.moveTo(gx, ground);
+    ctx.lineTo(gx + 62*Math.sin(a), ground - 62*Math.cos(a));
+    ctx.stroke();
+    ctx.setLineDash([]);
+}
+
+function frame(now) {
+    acc += Math.min(now - last, 50) / 1000; last = now;
+    while (acc >= dt) {
+        if (phase === 'flight') physics();
+        else if (phase === 'ready') { th += thd * dt; }
+        acc -= dt;
+    }
+
+    const W = cv.width, H = cv.height, ground = H - 40;
+    ctx.clearRect(0, 0, W, H);
+    // wheel momentum bar
+    ctx.strokeStyle = '#000';
+    ctx.strokeRect(W/2 - 150, 14, 300, 10);
+    ctx.fillStyle = '#000';
+    const frac = w / wMax;
+    if (frac >= 0) ctx.fillRect(W/2, 14, 150*frac, 10);
+    else ctx.fillRect(W/2 + 150*frac, 14, -150*frac, 10);
+    ctx.font = '12px Inter, sans-serif'; ctx.fillStyle = '#555';
+    ctx.fillText('wheel', W/2 - 190, 23);
+    // ground
+    ctx.strokeStyle = '#000';
+    ctx.beginPath(); ctx.moveTo(0, ground); ctx.lineTo(W, ground); ctx.stroke();
+    // landing pad and mirrored attitude guides
+    ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(xLand*ppm - 22, ground); ctx.lineTo(xLand*ppm + 22, ground); ctx.stroke();
+    ctx.lineWidth = 1;
+    guide(x0*ppm, ground, th0);        // takeoff line
+    guide(xLand*ppm, ground, thTarget); // landing line
+    // faint arc, anchored to the ground at launch and touchdown
+    ctx.strokeStyle = '#ccc';
+    ctx.beginPath();
+    for (let i = 0; i <= 40; i++) {
+        const t = i * tFlight/40;
+        const ax = (x0 + vx*t)*ppm, ay = ground - (vy0*t - 0.5*g*t*t)*ppm;
+        i ? ctx.lineTo(ax, ay) : ctx.moveTo(ax, ay);
+    }
+    ctx.stroke();
+
+    drawCooper(x*ppm, ground - 34 - y*ppm);
+
+    ctx.fillStyle = '#000'; ctx.font = '15px Inter, sans-serif';
+    if (phase === 'ready') ctx.fillText('press launch (or space). this is your tumble rate', 20, 60);
+    if (phase === 'landed') {
+        ctx.fillText(verdict + '. launch for the next round', 20, 60);
+        ctx.fillText((wrap(th - thTarget)*57.3).toFixed(0) + '° off the landing line / ' + thd.toFixed(1) + ' rad/s', 20, 84);
+    }
+    document.getElementById('round').textContent = round;
+    requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+
+</html>
