@@ -157,3 +157,9 @@ button:hover {
     color: inherit;
     text-decoration: none;
 }
+
+rt {
+    font-family: Inter, sans-serif;
+    font-size: 11px;
+    color: #555;
+}
