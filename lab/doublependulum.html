@@ -15,7 +15,7 @@
             border: 1px solid #000; padding: 8px 16px; margin-right: 10px; cursor: pointer;
         }
         button:active { background: #000; color: #fff; }
-        label { font-size: 14px; margin-left: 10px; }
+        button.on { background: #000; color: #fff; }
     </style>
 </head>
 
@@ -32,7 +32,7 @@
         <div>
             <button id="reset">reset</button>
             <button id="clear">clear trace</button>
-            <label><input type="checkbox" id="damp"> damping</label>
+            <button id="damp">damping</button>
         </div>
 
         <details>
@@ -136,16 +136,20 @@ cv.addEventListener('pointercancel', endDrag);
 
 document.getElementById('reset').addEventListener('click', reset);
 document.getElementById('clear').addEventListener('click', () => { trace.length = 0; });
+let dampOn = false;
+document.getElementById('damp').addEventListener('click', e => {
+    dampOn = !dampOn;
+    e.target.classList.toggle('on', dampOn);
+});
 
 // ---------- loop ----------
 let acc = 0, last = performance.now();
 function frame(now) {
     acc += Math.min(now - last, 50)/1000; last = now;
-    const damping = document.getElementById('damp').checked;
     while (acc >= dt) {
         if (!drag) {
             s = rk4(s, dt);
-            if (damping) { s[1] *= (1 - 0.25*dt); s[3] *= (1 - 0.25*dt); }
+            if (dampOn) { s[1] *= (1 - 0.25*dt); s[3] *= (1 - 0.25*dt); }
         }
         acc -= dt;
     }
