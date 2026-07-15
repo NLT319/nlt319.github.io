@@ -15,6 +15,7 @@
             border: 1px solid #000; padding: 8px 16px; margin-right: 10px; cursor: pointer;
         }
         button:active { background: #000; color: #fff; }
+        button.on { background: #000; color: #fff; }
     </style>
 </head>
 
@@ -22,7 +23,7 @@
     <div class="container">
         <p><a href="../lab.html">← lab</a></p>
         <h1>Stick the landing</h1>
-        <p>This is a cartoon of <a href="../portfolio/robotics.html#cooper">Cooper</a>, a jumping robot I built that reorients itself in midair with a reaction wheel. It launches with a random tumble and needs to arrive aligned with the dashed landing line, foot first, so the leg can recoup the jump energy, which is where the name comes from. Land within about eight degrees of the line, and slowly, to stick it, and if it keeps crashing, the show me button hands a round to the controller.</p>
+        <p>This is a cartoon of <a href="../portfolio/robotics.html#cooper">Cooper</a>, a jumping robot I built that reorients itself in midair with a reaction wheel. It launches with a random tumble and needs to arrive aligned with the dashed landing line, foot first, so the leg can recoup the jump energy, which is where the name comes from. Land within about eight degrees of the line, and slowly, to stick it, and if it keeps crashing, the show me button toggles control over to the controller until you press it again.</p>
 
         <canvas id="c" width="760" height="420"></canvas>
 
@@ -37,7 +38,7 @@
 
         <details>
             <summary>How it works</summary>
-            <p>The body and its reaction wheel exchange angular momentum and nothing else, so torquing the wheel one way spins the body the other, and the bar at the top shows how close the wheel is to saturation, past which you have no authority left in that direction. The body leaves the ground aligned with its takeoff velocity, and since the ballistic arc is symmetric, the landing line is the takeoff line mirrored about vertical. The show me button runs a saturated PD controller on attitude error, which is close in shape to what the real robot runs on its ESP32.</p>
+            <p>The body and its reaction wheel exchange angular momentum and nothing else, so torquing the wheel one way spins the body the other, and the bar at the top shows how close the wheel is to saturation, past which you have no authority left in that direction. The body leaves the ground aligned with its takeoff velocity, and since the ballistic arc is symmetric, the landing line is the takeoff line mirrored about vertical. The show me toggle runs a saturated PD controller on attitude error, which is close in shape to what the real robot runs on its ESP32, and it stays engaged across rounds until toggled off, meaning that you can also flip it mid-flight to watch a recovery from whatever situation you got yourself into.</p>
         </details>
 
         <hr>
@@ -63,12 +64,13 @@ const thTol = 0.14, thdTol = 1.2;
 const thOk = 0.35, thdOk = 3.0;
 const ppm = 24;
 
-let th, thd, w, x, y, vy, phase, verdict, round = 1, stuck = 0, streak = 0, auto = false;
+let th, thd, w, x, y, vy, phase, verdict, round = 1, stuck = 0, streak = 0;
+let auto = false;   // persists across rounds; toggled by the show me button
 function newRound() {
     th = th0; w = 0; x = x0; y = 0; vy = 0;
     const sign = Math.random() < 0.5 ? -1 : 1;
     thd = sign * (2 + Math.random() * 4);
-    phase = 'ready'; verdict = ''; auto = false;
+    phase = 'ready'; verdict = '';
 }
 newRound();
 
@@ -87,8 +89,9 @@ function holdBtn(id, d) {
 }
 holdBtn('btnL', -1); holdBtn('btnR', 1);
 document.getElementById('btnGo').addEventListener('click', launch);
-document.getElementById('btnShow').addEventListener('click', () => {
-    if (phase === 'ready') { auto = true; launch(); }
+document.getElementById('btnShow').addEventListener('click', e => {
+    auto = !auto;
+    e.target.classList.toggle('on', auto);
 });
 
 function launch() {

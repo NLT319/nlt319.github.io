@@ -77,10 +77,18 @@ small {
 /* --- additions for about/portfolio pages, same voice as the above --- */
 
 nav.site {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 60px;
+    margin-bottom: 40px;
     font-size: 16px;
+}
+
+nav.site a {
+    margin-right: 20px;
+}
+
+/* pressed state for toggleable demo buttons */
+button.on {
+    background: #000;
+    color: #fff;
 }
 
 .entry {
