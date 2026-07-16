@@ -22,25 +22,64 @@
         <div class="entry">
             <h2 id="running-shoe">Running shoe sole</h2>
             <p class="label">Capstone · 2024–2025</p>
-            <p>A mechanical running shoe sole that reached 87.4% energy return, beating the Nike Alphafly benchmark in our testing. The design was iterated through a digital twin, a first principles thermodynamic model in MATLAB validated against hardware, and the project won the Innovation in Engineering award. <!-- TODO: images, maybe the F(d) model figure --></p>
+            <p>A mechanical running shoe sole that reached 87.4% energy return, beating the Nike Alphafly benchmark in our testing. The design was iterated through a digital twin, a first principles thermodynamic model in MATLAB validated against hardware, and the project won the Innovation in Engineering award. <!-- TODO: the F(d) model figure --></p>
+            <figure>
+                <img src="../images/mechanical/running-shoe-prototype.jpg" alt="The tested shoe prototype next to a laptop showing impact machine analysis">
+                <figcaption>The tested prototype, alongside impact machine data at a lab open house.</figcaption>
+            </figure>
         </div>
 
         <div class="entry">
             <h2 id="impact-machine">Impact test machine</h2>
             <p class="label">Capstone · 2024–2025</p>
-            <p>To prove the sole's numbers we built a gravity driven impact test machine compliant with ASTM F1976, taking it from SolidWorks CAD with full GD&amp;T drawings and a BOM through machining and assembly. It was instrumented with an LVDT, load cell, and DAQ, feeding a semi-automatic MATLAB tool I wrote for energy return, force displacement, and damping analysis. <!-- TODO: images --></p>
+            <p>To prove the sole's numbers we built a gravity driven impact test machine compliant with ASTM F1976, taking it from SolidWorks CAD with full GD&amp;T drawings and a BOM through machining and assembly. It was instrumented with an LVDT, load cell, and DAQ, feeding a semi-automatic MATLAB tool I wrote for energy return, force displacement, and damping analysis.</p>
+            <figure>
+                <img src="../images/mechanical/impact-machine-assembly.png" alt="Color-coded CAD assembly of the impact test machine">
+                <figcaption>The impact rod, LVDT, bearing, electronics, and force plate subsystems, color-coded on the aluminum extrusion frame.</figcaption>
+            </figure>
+            <details>
+                <summary>More photos</summary>
+                <figure>
+                    <img src="../images/mechanical/impact-machine-front.jpg" alt="Front view of the assembled impact test machine">
+                    <figcaption>The assembled machine, front view.</figcaption>
+                </figure>
+                <figure>
+                    <img src="../images/mechanical/impact-machine-angle.jpg" alt="Angled view of the assembled impact test machine">
+                    <figcaption>The assembled machine, from an angle.</figcaption>
+                </figure>
+                <figure>
+                    <img src="../images/mechanical/impact-rod-lvdt-assembly.png" alt="Labeled CAD diagram of the impact rod and LVDT assemblies">
+                    <figcaption>Impact rod assembly and LVDT assembly, labeled.</figcaption>
+                </figure>
+                <figure>
+                    <img src="../images/mechanical/impact-bearing-electronics.png" alt="Labeled CAD diagram of the bearing assembly and electronics">
+                    <figcaption>Bearing assembly and electronics, labeled.</figcaption>
+                </figure>
+                <figure>
+                    <img src="../images/mechanical/impact-lvdt-plate-drawing.png" alt="GD&amp;T dimensioned drawing of the LVDT plate">
+                    <figcaption>An example part drawing, the LVDT plate, with full GD&amp;T.</figcaption>
+                </figure>
+            </details>
         </div>
 
         <div class="entry">
             <h2 id="haptic">Haptic force display</h2>
             <p class="label">Course project · 2025</p>
-            <p>A handheld device that creates the sensation of being pulled in a direction using asymmetric acceleration of an eccentric mass through a geared transmission, in a 61 gram package. After several physical prototypes, it outperformed a published research device in user perception testing. <!-- TODO: image, maybe a short demo clip --></p>
+            <p>A handheld device that creates the sensation of being pulled in a direction using asymmetric acceleration of an eccentric mass through a geared transmission, in a 61 gram package. The design improves on a device published by Amemiya et al., which uses translational rather than rotational motion and is bulkier, with more mass and less force perception. After several physical prototypes, mine outperformed the Amemiya device in user perception testing, producing around 2.5 N of peak force, about what a cup of peanut butter weighs, from a 0.2 lb eccentric mass swinging at 31 in/s at a 0.865 inch radius. However, the kick effect bleeds slightly into the next half rotation, which reduces its efficacy somewhat. <!-- TODO: short demo clip --></p>
+            <figure>
+                <img src="../images/mechanical/haptic-cross-section.png" alt="Cross section CAD diagram of the haptic display's geared transmission">
+                <figcaption>Cross section of the transmission: motor, pinion attachment, geared wheels, frame, and end cap.</figcaption>
+            </figure>
+            <figure>
+                <img src="../images/mechanical/haptic-prototype.jpg" alt="Handheld prototype of the geared eccentric mass mechanism">
+                <figcaption>The assembled prototype, breadboard control electronics included.</figcaption>
+            </figure>
         </div>
 
         <div class="entry">
             <h2 id="cellink">Production tooling at CelLink</h2>
             <p class="label">Internship · Summer 2025</p>
-            <p>As an equipment engineering intern I designed a tool-change mechanism for a robotic circuit assembler that cut cycle time by 70%, along with a mechanical locking system for datuming thin, flimsy parts at volume and a roll-to-roll tool upgrade with full GD&amp;T drawings. Fabrication ran through a Tormach CNC mill, a manual lathe, and plenty of hand work. <!-- TODO: confirm which details and images are cleared to show publicly --></p>
+            <p>As an equipment engineering intern I designed a tool-change mechanism that resolved a production bottleneck on a robotic circuit assembler, cutting cycle time by 70%, along with a mechanical locking system for datuming thin, flimsy parts at volume and a roll-to-roll tool upgrade with full GD&amp;T drawings. Fabrication ran through a Tormach CNC mill, a manual lathe, and plenty of hand work. <!-- TODO: confirm which details and images are cleared to show publicly --></p>
         </div>
 
         <div class="entry">
@@ -52,7 +91,43 @@
         <div class="entry">
             <h2 id="motor-adaptor">Motor to gearbox adaptor</h2>
             <p class="label">Hawkes Lab · 2024</p>
-            <p>A tiny toleranced adaptor mounting a small motor and ESC to an existing gearbox, done as parallel 3D printed and machined designs with a modified rotor shaft. Small enough to be mostly a tolerancing exercise, which was the fun of it. <!-- TODO: image --></p>
+            <p>A tiny toleranced adaptor mounting a small motor and ESC to an existing gearbox, done as parallel 3D printed and machined designs with a modified rotor shaft. Small enough to be mostly a tolerancing exercise.</p>
+            <figure>
+                <img src="../images/mechanical/motor-adaptor-assembly.jpg" alt="The small motor and gearbox with the geartrain visible">
+                <figcaption>The motor and gearbox, geartrain and output shaft visible.</figcaption>
+            </figure>
+            <figure>
+                <img src="../images/mechanical/motor-adaptor-components.jpg" alt="The motor and gearbox components disassembled">
+                <figcaption>The motor and gearbox components before assembly.</figcaption>
+            </figure>
+        </div>
+
+        <div class="entry">
+            <h2 id="bike-fork">BMX fork FEA optimization</h2>
+            <p class="label">ME 108 course project <!-- TODO: confirm term/year --></p>
+            <p>For an ME 108 course project done with a partner, I ran finite element analysis in SolidWorks on a freestyle BMX bike fork in AISI 4130 Chromoly steel, loading it to approximate an 80 kg rider performing a nose manual. The stock design held with a safety factor of 55x, which was likely overkill for a single static load, though fatigue over many trick cycles is a separate concern. For the redesign we added fillets at the joints and thickened the tube that mounts to the frame, which moved the location of maximum stress and made the model more accurate, as welded joints look like wide fillets in practice.</p>
+            <figure>
+                <img src="../images/mechanical/bike-fork-mesh.jpg" alt="Closeup of the curvature-based adaptive mesh on the bike fork crown">
+                <figcaption>The h-adaptive mesh at the crown, where it converged to 60,711 elements over 5 iterations.</figcaption>
+            </figure>
+            <figure>
+                <img src="../images/mechanical/bike-fork-stress-initial.png" alt="Von Mises stress plot of the bike fork under normal loading">
+                <figcaption>Von Mises stress under the 800 N nose manual load, maxing at 13.23 MPa against a 710 MPa yield strength.</figcaption>
+            </figure>
+        </div>
+
+        <div class="entry">
+            <h2 id="scramjet">Scramjet combustor CFD validation</h2>
+            <p class="label">Fluid Physics Lab, National Taiwan University · Summer 2024</p>
+            <p>Over the summer of 2024 I worked in the Fluid Physics Lab at National Taiwan University under Professor Kuo-Long Pan, validating a 2D Ansys Fluent simulation of a scramjet combustor against a prior master's thesis from the same lab. The combustor uses a triangular strut to ram and compress incoming supersonic air, followed by an expanding nozzle that accelerates the flow, with a hydrogen injector positioned behind the strut to feed the H2-O2 combustion reaction. I replicated the thesis's operating conditions by tuning the front air inlet to Mach 2, or 730 m/s, at a mass flow of 18.1 kg/s, and the hydrogen injector to Mach 1, or 1201 m/s, with the exhaust outlet set to atmospheric pressure, running the simulation in 2D rather than 3D for speed, with Ansys extending the contour into a 1 meter wide volume to prevent edge effects, over an adaptive mesh split into three regions with element sizes from 2mm down to 0.2mm where resolution mattered most. The simulation itself ran in two phases: first a cold flow steady state solve over 500 iterations validated the pressure distribution against the thesis's experimental data, then a combustion simulation using the transient solver, igniting a region set to 2000 K and tracking a 9 step H2/O2 reaction mechanism, validated the temperature distribution the same way, and both results matched the experimental benchmarks from the reference thesis.</p>
+            <figure>
+                <img src="../images/mechanical/scramjet-mach-contour.png" alt="Mach number contour plot through the scramjet combustor">
+                <figcaption>Mach number contour through the strut and combustor, cold flow case.</figcaption>
+            </figure>
+            <figure>
+                <img src="../images/mechanical/scramjet-temperature-contour.png" alt="Static temperature contour plot showing the combustion reaction">
+                <figcaption>Static temperature contour once the H2-O2 combustion reaction ignites.</figcaption>
+            </figure>
         </div>
 
         <hr>
