@@ -24,10 +24,14 @@
             <p class="label">Hawkes Lab, MS project · 2025–2026</p>
             <p>Cooper is a jumping robot that reorients itself in flight using a reaction wheel, as landing aligned lets it recoup the jump energy through the leg, which is where the name comes from. I designed and assembled the full system, covering the mechanical structure, BLDC actuation, IMU integration, and the embedded electronics, then developed a reduced order dynamics model and compared control strategies in MATLAB, including standard LQR, a braking wheel approach, and an optimized trajectory T-LQR. The best of them runs in C++ on an ESP32, estimating and correcting attitude in real time during ballistic flight on a spring loaded launcher, with telemetry streamed over WiFi for debugging. In testing, the system reliably cancelled rotation once aligned, though gyro drift left some persistent error in the attitude estimate, which further tuning in simulation is meant to address. Code is on <a href="https://github.com/NLT319/Reorienting_Jumper">GitHub</a>.</p>
             <figure>
+                <img src="../images/robotics/cooper-throw-strobe.jpg" alt="Strobe composite of Cooper thrown across a courtyard, reorienting through its flight arc">
+                <figcaption>A strobe composite of a throw, Cooper reorienting through the arc to land aligned.</figcaption>
+            </figure>
+            <figure>
                 <img src="../images/robotics/cooper-wheel-assembly.jpg" alt="CAD render of Cooper's reaction wheel and motor assembly">
                 <figcaption>Reaction wheel and motor assembly, mounted for bench testing.</figcaption>
             </figure>
-            <!-- TODO: verify repo URL, more images, maybe the launcher video -->
+            <!-- TODO: verify repo URL, maybe the launcher video -->
         </div>
 
         <div class="entry">
