@@ -163,3 +163,16 @@ rt {
     font-size: 11px;
     color: #555;
 }
+
+.tiles {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.tiles img {
+    width: 50%;
+    height: 150px;
+    object-fit: cover;
+    display: block;
+}
