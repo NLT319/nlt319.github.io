@@ -32,18 +32,39 @@
         <h1>MEMS fabrication</h1>
 
         <div class="entry">
-            <h2 id="mems">MEMS microfluidic channels</h2>
+            <h2 id="microfluidics">Microfluidic channel fabrication</h2>
             <p class="label">ME 292 cleanroom course, UC Santa Barbara, Professor Sumita Pennathur · 2026</p>
             <p>In an ME 292 cleanroom course at UC Santa Barbara, I fabricated microfluidic channels in both silicon and glass, then attempted to bond them closed for current sensing. The silicon process ran through a thermally grown oxide hard mask, AZ P4110 photolithography, a BHF wet etch to open the mask, a KOH anisotropic etch into the substrate, and a final insulating oxide grown back over the surface. Glass channels skipped the hard mask, as the target depths were shallow enough to etch straight through the photoresist in BHF.</p>
-            <p>KOH etches silicon anisotropically, so a &lt;100&gt; wafer etched through a mask aligned to the crystal should produce a sidewall at 54.7&deg;. An initial profilometer scan measured 39.9&deg; instead, well below the theoretical value, which was the first sign something was off, though it wasn't clear whether the discrepancy was a measurement limitation or a real crystal misalignment. A follow-up SEM cross section, milled with a focused ion beam and imaged at a 52&deg; tilt, measured 48.6&deg;, closer to theory but still off. XRD confirmed the substrate was true Si&lt;100&gt;, and a phi scan of the etched channel found the mask misaligned to the crystal's (011) plane by about 5.65&deg;, close to what the SEM measurement had already suggested, which likely accounts for most of the remaining gap.</p>
             <p>Closing the channels turned out to be the harder half of the project. I compared reversible PDMS peel-and-stick bonding against irreversible oxygen plasma bonding, along with thermocompression and solvent bonding as options, and settled on oxygen plasma as the best fit for the cleanroom's tools and the channel geometry. In practice, the channels were shallow enough that the PDMS base sagged into them under either bonding method, so testing for current sensing ultimately used a TA-supplied dataset from a deeper DRIE-etched reference chip instead of the group's own devices.</p>
-            <figure>
-                <img src="../images/fabrication/mems-sem-sidewall.png" alt="SEM cross section of the etched silicon sidewall, angle measured at 48.6 degrees">
-                <figcaption>FIB-milled SEM cross section of the KOH-etched sidewall, measured at 48.6&deg; against the theoretical 54.7&deg;.</figcaption>
-            </figure>
             <figure>
                 <img src="../images/fabrication/mems-photolithography-sequence.jpg" alt="Six-panel photolithography sequence: spin coating, mask alignment, developing, hard bake, plasma descum">
                 <figcaption>The photolithography sequence: spin coat, mask alignment, developing, hard bake, and plasma descum.</figcaption>
+            </figure>
+            <figure>
+                <img src="../images/fabrication/mems-bonded-device.jpg" alt="A bonded PDMS and glass microfluidic device">
+                <figcaption>A bonded PDMS/glass device, ready for current-sensing tests.</figcaption>
+            </figure>
+            <details>
+                <summary>More photos</summary>
+                <figure>
+                    <img src="../images/fabrication/mems-koh-etch-visual.jpg" alt="Microscope comparison of a KOH-etched sample against an unetched sample">
+                    <figcaption>KOH-etched hard mask (left) against unetched oxide (right), under the microscope.</figcaption>
+                </figure>
+                <figure>
+                    <img src="../images/fabrication/mems-dehydration-bake.jpg" alt="Preparing samples for a dehydration bake in the cleanroom">
+                    <figcaption>Prepping samples for a dehydration bake ahead of photolithography.</figcaption>
+                </figure>
+            </details>
+            <!-- TODO: mask layout image -->
+        </div>
+
+        <div class="entry">
+            <h2 id="sidewall">Sidewall characterization</h2>
+            <p class="label">ME 292 cleanroom course, UC Santa Barbara · 2026</p>
+            <p>KOH etches silicon anisotropically, so a &lt;100&gt; wafer etched through a mask aligned to the crystal should produce a sidewall at 54.7&deg;. An initial profilometer scan measured 39.9&deg; instead, well below the theoretical value, which was the first sign something was off, though it wasn't clear whether the discrepancy was a measurement limitation or a real crystal misalignment. A follow-up SEM cross section, milled with a focused ion beam and imaged at a 52&deg; tilt, measured 48.6&deg;, closer to theory but still off. XRD confirmed the substrate was true Si&lt;100&gt;, and a phi scan of the etched channel found the mask misaligned to the crystal's (011) plane by about 5.65&deg;, close to what the SEM measurement had already suggested, which likely accounts for most of the remaining gap.</p>
+            <figure>
+                <img src="../images/fabrication/mems-sem-sidewall.png" alt="SEM cross section of the etched silicon sidewall, angle measured at 48.6 degrees">
+                <figcaption>FIB-milled SEM cross section of the KOH-etched sidewall, measured at 48.6&deg; against the theoretical 54.7&deg;.</figcaption>
             </figure>
             <details>
                 <summary>More photos</summary>
@@ -63,20 +84,7 @@
                     <img src="../images/fabrication/mems-xrd-2theta.png" alt="XRD 2theta/omega scan showing the Si(400) peak">
                     <figcaption>XRD 2theta/omega scan confirming the substrate as true Si&lt;100&gt;.</figcaption>
                 </figure>
-                <figure>
-                    <img src="../images/fabrication/mems-koh-etch-visual.jpg" alt="Microscope comparison of a KOH-etched sample against an unetched sample">
-                    <figcaption>KOH-etched hard mask (left) against unetched oxide (right), under the microscope.</figcaption>
-                </figure>
-                <figure>
-                    <img src="../images/fabrication/mems-dehydration-bake.jpg" alt="Preparing samples for a dehydration bake in the cleanroom">
-                    <figcaption>Prepping samples for a dehydration bake ahead of photolithography.</figcaption>
-                </figure>
-                <figure>
-                    <img src="../images/fabrication/mems-bonded-device.jpg" alt="A bonded PDMS and glass microfluidic device">
-                    <figcaption>A bonded PDMS/glass device, ready for current-sensing tests.</figcaption>
-                </figure>
             </details>
-            <!-- TODO: mask layout image -->
         </div>
 
         <hr>
