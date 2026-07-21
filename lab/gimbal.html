@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- // current issues:
+// 1. gust does not apply torque to the rocket correctly. ideally there would be a center of pressure and a center of mass.
+// 2. LQR controller cannot handle having crossed the wrapped boundary
+// 3. LQR controller is unstable -->
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gimbal · Lab · Neel Tripathi</title>
+    <meta name="description" content="An interactive gimbaled rocket hover demo with a two-input LQR controller toggle, by Neel Tripathi.">
+    <link rel="canonical" href="https://nlt319.github.io/lab/gimbal.html">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="icon" type="image/x-icon" href="../favicon.gif">
+    <style>
+        canvas { display: block; width: 100%; max-width: 760px; border: 1px solid #000; touch-action: none; }
+        .hud { font-size: 14px; margin: 10px 0; font-variant-numeric: tabular-nums; }
+        .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .controls button {
+            font: inherit; font-size: 14px; background: #fff; color: #000;
+            border: 1px solid #000; padding: 8px 16px; cursor: pointer;
+        }
+        .controls button:active { background: #000; color: #fff; }
+        .controls button.on { background: #000; color: #fff; }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <p><a href="index.html">← lab</a></p>
+        <h1>Gimbal</h1>
+        <p>Keep the rocket hovering. Arrow keys or the buttons gimbal the engine and adjust the throttle, and once you have survived a few seconds, wind gusts start arriving, each telegraphed by an arrow a moment before it hits. The LQR button toggles control over to a controller, and then you can try to knock it off balance.</p>
+
+        <canvas id="c" width="760" height="480"></canvas>
+
+        <p class="hud">aloft: <span id="time">0.0</span> s · best: <span id="best">0.0</span> s · T = <span id="thrust">0.0</span> N · &phi; = <span id="gimbal">0.0</span>&deg;</p>
+
+        <div class="controls">
+            <button id="btnGL">&#9664; gimbal</button>
+            <button id="btnGR">gimbal &#9654;</button>
+            <button id="btnTU">&#9650; throttle</button>
+            <button id="btnTD">&#9660; throttle</button>
+            <button id="btnReset">reset</button>
+            <button id="lqr">LQR control</button>
+        </div>
+
+        <details>
+            <summary>How it works</summary>
+            <p>The nonlinear rocket dynamics are integrated with RK4 at 240 steps per second. Thrust is gimbaled by an angle &phi; off the body's centerline, producing both a sideways force component and a torque about the center of mass, as the engine sits below it, meaning the same actuator has to correct drift and attitude at once. The LQR gain matrix is computed in your browser at load time the same way as the cart-pole demo, by numerically linearizing the dynamics about hover and iterating the discrete Riccati equation, generalized here to two control inputs, throttle and gimbal, instead of one. In LQR mode your manual inputs and the wind gusts both enter as disturbances on top of the controller's own commands.</p>
+        </details>
+
+        <hr>
+        <p><small>&copy; 2026 <a href="https://nlt319.github.io/" class="quiet">Neel Tripathi</a></small></p>
+    </div>
+
+<script>
+"use strict";
+// ---------- parameters ----------
+const m = 1.0;       // rocket mass, kg
+const g = 9.81;
+const l = 0.5;        // engine offset below center of mass, m
+const I = 0.3;        // moment of inertia, kg m^2
+const Tmax = 2 * m * g;    // max throttle, N
+const phiMax = 20 * Math.PI / 180;      // keyboard gimbal authority, rad
+const phiMaxBtn = 15 * Math.PI / 180;   // button gimbal authority, gentler for touch
+const dTKey = Tmax - m * g;   // keyboard throttle authority (symmetric about hover trim)
+const dTBtn = 0.7 * (Tmax - m * g);
+const dt = 1 / 240;
+const thLim = 3.5;    // tip-over angle, rad
+const yGround = 0;     // crash altitude, m
+const yCeil = 6;       // flew-out-of-range altitude, m
+const y0 = 3;          // hover target altitude, m
+const Fdist = 3;       // wind gust accel scale, m/s^2
+
+// state: [x, xdot, y, ydot, theta, thetadot], theta = 0 upright
+let s, tUp, best = 0, failed, failText = '';
+let distNext = 0, distDir = 0, distUntil = 0, warnFrom = 0;
+function wrapAngle(th) {
+    return ((th + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+}
+function stateError(st) {
+    const target = [0, 0, y0, 0, 0, 0];
+    return st.map((v, i) => (i === 4 ? wrapAngle(v - target[i]) : v - target[i]));
+}
+function reset() {
+    s = [0, 0, y0, 0, (Math.random() - 0.5) * 0.06, 0];
+    tUp = 0; failed = false; failText = '';
+    distNext = 3 + 4 * Math.random() + 4 * Math.random(); distDir = 0; distUntil = 0; warnFrom = 0;
+}
+reset();
+
+// ---------- dynamics ----------
+// control u = [T, phi]
+function deriv(st, u) {
+    const [, vx, , vy, th, om] = st;
+    const [T, phi] = u;
+    const ax = (T / m) * Math.sin(th + phi);
+    const ay = (T / m) * Math.cos(th + phi) - g;
+    const al = (l * T / I) * Math.sin(phi);
+    return [vx, ax, vy, ay, om, al];
+}
+function rk4(st, u, h) {
+    const k1 = deriv(st, u);
+    const k2 = deriv(st.map((v, i) => v + h / 2 * k1[i]), u);
+    const k3 = deriv(st.map((v, i) => v + h / 2 * k2[i]), u);
+    const k4 = deriv(st.map((v, i) => v + h * k3[i]), u);
+    return st.map((v, i) => v + h / 6 * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]));
+}
+
+// ---------- LQR (computed at load) ----------
+// generic matrix helpers, dimension-agnostic
+const mmul = (A, B) => A.map((r, i) => B[0].map((_, j) => r.reduce((a, _, k) => a + A[i][k] * B[k][j], 0)));
+const madd = (A, B) => A.map((r, i) => r.map((v, j) => v + B[i][j]));
+const msub = (A, B) => A.map((r, i) => r.map((v, j) => v - B[i][j]));
+const T = A => A[0].map((_, j) => A.map(r => r[j]));
+function inv2x2(M) {
+    const det = M[0][0] * M[1][1] - M[0][1] * M[1][0];
+    return [[M[1][1] / det, -M[0][1] / det], [-M[1][0] / det, M[0][0] / det]];
+}
+
+// A, B derived numerically from deriv() about hover equilibrium
+function linearize() {
+    const eps = 1e-5;
+    const s0 = [0, 0, y0, 0, 0, 0], u0 = [m * g, 0];
+    const f0 = deriv(s0, u0);
+    const Acols = [];
+    for (let j = 0; j < 6; j++) {
+        const sp = s0.slice(); sp[j] += eps;
+        const fp = deriv(sp, u0);
+        Acols.push(fp.map((v, i) => (v - f0[i]) / eps));
+    }
+    const Acont = T(Acols); // columns were states
+    const Bcont = f0.map(() => [0, 0]);
+    for (let k = 0; k < 2; k++) {
+        const up = u0.slice(); up[k] += eps;
+        const fp = deriv(s0, up);
+        fp.forEach((v, i) => { Bcont[i][k] = (v - f0[i]) / eps; });
+    }
+    return [Acont, Bcont];
+}
+const [Ac, Bc] = linearize();
+const hd = dt;
+const I6 = [[1,0,0,0,0,0],[0,1,0,0,0,0],[0,0,1,0,0,0],[0,0,0,1,0,0],[0,0,0,0,1,0],[0,0,0,0,0,1]];
+const Ad = madd(I6, Ac.map(r => r.map(v => v * hd)));
+const Bd = Bc.map(r => r.map(v => v * hd));
+const Q = [[1.5,0,0,0,0,0],[0,0.25,0,0,0,0],[0,0,1.8,0,0,0],[0,0,0,0.25,0,0],[0,0,0,0,24,0],[0,0,0,0,0,2]];
+const R = [[0.08, 0], [0, 8]];
+const autoScale = 0.6;
+
+let P = Q.map(r => r.slice());
+for (let it = 0; it < 3000; it++) {
+    const BtP = mmul(T(Bd), P);
+    const S = madd(R, mmul(BtP, Bd));
+    const Sinv = inv2x2(S);
+    const K = mmul(Sinv, mmul(BtP, Ad));
+    const AmBK = msub(Ad, mmul(Bd, K));
+    P = madd(madd(mmul(mmul(T(AmBK), P), AmBK), mmul(mmul(T(K), R), K)), Q);
+}
+const BtP = mmul(T(Bd), P);
+const S = madd(R, mmul(BtP, Bd));
+const Sinv = inv2x2(S);
+const Kgain = mmul(Sinv, mmul(BtP, Ad)); // 2x6
+
+// ---------- input ----------
+const keys = {};
+addEventListener('keydown', e => {
+    if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) { keys[e.key] = true; e.preventDefault(); }
+    if (e.key === 'r') reset();
+});
+addEventListener('keyup', e => { keys[e.key] = false; });
+let dirG = 0, dirT = 0;
+function holdBtn(id, setter) {
+    const b = document.getElementById(id);
+    const on = e => { e.preventDefault(); setter(1); };
+    const off = () => { setter(0); };
+    b.addEventListener('pointerdown', on);
+    b.addEventListener('pointerup', off);
+    b.addEventListener('pointerleave', off);
+}
+holdBtn('btnGL', v => dirG = -v);
+holdBtn('btnGR', v => dirG = v);
+holdBtn('btnTU', v => dirT = v);
+holdBtn('btnTD', v => dirT = -v);
+document.getElementById('btnReset').addEventListener('click', reset);
+let lqrOn = false;
+let lqrBlend = 0;
+document.getElementById('lqr').addEventListener('click', e => {
+    lqrOn = !lqrOn;
+    e.target.classList.toggle('on', lqrOn);
+    if (!lqrOn) lqrBlend = 0;
+});
+
+// ---------- loop ----------
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const scale = 60; // px per meter
+const groundPx = 440;
+const px = xm => cv.width / 2 + xm * scale;
+const py = ym => groundPx - ym * scale;
+let acc = 0, last = performance.now(), Tshow = m * g, phiShow = 0;
+
+function step(u) { s = rk4(s, u, dt); }
+
+function drawRocket(cx, cyy, th) {
+    ctx.save();
+    ctx.translate(cx, cyy);
+    ctx.rotate(th);
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -22); ctx.lineTo(8, 14); ctx.lineTo(-8, 14); ctx.closePath(); ctx.stroke();
+    // flame, deflected by phi, length scaled by throttle
+    if (!failed) {
+        const flameLen = 10 + 26 * (Tshow / Tmax);
+        ctx.save();
+        ctx.translate(0, 14);
+        ctx.rotate(phiShow);
+        ctx.strokeStyle = '#999'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, flameLen); ctx.stroke();
+        ctx.restore();
+    }
+    ctx.restore();
+}
+
+function frame(now) {
+    acc += Math.min(now - last, 50) / 1000; last = now;
+    const kG = (keys.ArrowRight ? 1 : 0) - (keys.ArrowLeft ? 1 : 0);
+    const kT = (keys.ArrowUp ? 1 : 0) - (keys.ArrowDown ? 1 : 0);
+    const gCmd = kG ? kG * phiMax : dirG * phiMaxBtn;
+    const tCmd = kT ? kT * dTKey : dirT * dTBtn;
+
+    while (acc >= dt) {
+        let T_, phi_;
+        if (auto_() && !failed) {
+            lqrBlend = Math.min(1, lqrBlend + dt / 0.4);
+            const e = stateError(s);
+            const dT = -(Kgain[0][0]*e[0] + Kgain[0][1]*e[1] + Kgain[0][2]*e[2] + Kgain[0][3]*e[3] + Kgain[0][4]*e[4] + Kgain[0][5]*e[5]);
+            const dPhi = -(Kgain[1][0]*e[0] + Kgain[1][1]*e[1] + Kgain[1][2]*e[2] + Kgain[1][3]*e[3] + Kgain[1][4]*e[4] + Kgain[1][5]*e[5]);
+            T_ = m*g + tCmd + autoScale * lqrBlend * dT;
+            phi_ = gCmd + autoScale * lqrBlend * dPhi;
+        } else {
+            lqrBlend = 0;
+            T_ = m*g + tCmd;
+            phi_ = gCmd;
+        }
+        T_ = Math.max(0, Math.min(Tmax, T_));
+        phi_ = Math.max(-phiMax, Math.min(phiMax, phi_));
+        Tshow = T_; phiShow = phi_;
+
+        if (!failed) {
+            // telegraphed wind gusts: warn 0.8 s ahead, gust for 0.4 s
+            if (distDir === 0 && tUp > distNext - 0.8) {
+                distDir = Math.random() < 0.5 ? -1 : 1;
+                warnFrom = distNext - 0.8; distUntil = distNext + 0.4;
+            }
+            let wind = 0;
+            if (distDir !== 0 && tUp > distNext && tUp < distUntil) wind = distDir * Fdist;
+            if (distDir !== 0 && tUp >= distUntil) {
+                distDir = 0;
+                distNext = tUp + 4 + 4 * Math.random();
+            }
+            step([T_, phi_]);
+            s[1] += wind * dt; // wind as a direct horizontal accel impulse this step
+            tUp += dt;
+            if (s[2] <= yGround) { failed = true; failText = 'crashed'; }
+            else if (s[2] >= yCeil) { failed = true; failText = 'flew out of range'; }
+            else if (Math.abs(s[4]) > thLim) { failed = true; failText = 'tipped over'; }
+            if (failed) best = Math.max(best, tUp);
+        }
+        acc -= dt;
+    }
+
+    // draw
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, groundPx); ctx.lineTo(cv.width, groundPx); ctx.stroke();
+    // ceiling
+    ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(0, py(yCeil)); ctx.lineTo(cv.width, py(yCeil)); ctx.stroke();
+    // hover target line
+    ctx.strokeStyle = '#ccc';
+    ctx.beginPath(); ctx.moveTo(0, py(y0)); ctx.lineTo(cv.width, py(y0)); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // rocket, wrapped horizontally so it can orbit off one side and back the other
+    const W = cv.width;
+    const cx = ((px(s[0]) % W) + W) % W;
+    const cyy = py(s[2]), th = s[4];
+    for (const off of [-W, 0, W]) drawRocket(cx + off, cyy, th);
+
+    // disturbance arrow
+    if (!failed && distDir !== 0 && tUp > warnFrom) {
+        const ay = py(s[2]);
+        const axBase = cx - distDir * 78, tip = cx - distDir * 44;
+        const active = tUp > distNext;
+        ctx.strokeStyle = ctx.fillStyle = '#000';
+        ctx.lineWidth = active ? 3 : 1.5;
+        ctx.beginPath(); ctx.moveTo(axBase, ay); ctx.lineTo(tip, ay); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(tip + distDir*8, ay);
+        ctx.lineTo(tip, ay - 5); ctx.lineTo(tip, ay + 5);
+        ctx.closePath(); ctx.fill();
+        ctx.lineWidth = 1;
+    }
+    if (failed) {
+        ctx.font = '16px Inter, sans-serif';
+        ctx.fillStyle = '#000';
+        ctx.fillText(failText + '. press reset (or r)', cv.width/2 - 100, 60);
+    }
+
+    document.getElementById('time').textContent = tUp.toFixed(1);
+    document.getElementById('best').textContent = best.toFixed(1);
+    document.getElementById('thrust').textContent = Tshow.toFixed(1);
+    document.getElementById('gimbal').textContent = (phiShow * 180 / Math.PI).toFixed(1);
+    requestAnimationFrame(frame);
+}
+function auto_() { return lqrOn; }
+requestAnimationFrame(frame);
+</script>
+</body>
+
+</html>
