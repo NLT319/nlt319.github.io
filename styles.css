@@ -47,6 +47,17 @@ p {
     margin-bottom: 15px;
 }
 
+h3 {
+    font-size: 16px;
+    font-weight: normal;
+    margin-top: 10px;
+    margin-bottom: 0px;
+}
+
+h3 + p {
+    margin-top: 0;
+}
+
 a {
     color: #000;
     text-decoration: underline;
@@ -76,14 +87,20 @@ small {
 }
 
 .reading-list {
-    margin-top: 0;
-    margin-bottom: 1rem;    padding-left: 1em;   /* less indentation */
-    line-height: 1.2;    /* tighter lines */
+    margin-top: 0.15rem;
+    margin-bottom: 0.8rem;
+    padding-left: 1em;
+    line-height: 1.2;
 }
 
 .reading-list li {
     margin: 0;
     padding: 0;
+}
+
+.reading-list > li.section-label {
+    list-style: none;
+    margin-left: -1em;
 }
 
 .reading-list small {
