@@ -68,11 +68,13 @@ const phiMaxBtn = 15 * Math.PI / 180;   // button gimbal authority, gentler for 
 const dTKey = Tmax - m * g;   // keyboard throttle authority (symmetric about hover trim)
 const dTBtn = 0.7 * (Tmax - m * g);
 const dt = 1 / 240;
-const thLim = 3.5;    // tip-over angle, rad
+const thLim = 6 * Math.PI;    // tip-over angle, rad: generous, so a spin-driven LQR recovery (which can wind through a couple of full rotations before settling) isn't cut off mid-save
 const yGround = 0;     // crash altitude, m
-const yCeil = 6;       // flew-out-of-range altitude, m
-const y0 = 3;          // hover target altitude, m
+const yCeil = 20;      // flew-out-of-range altitude, m
+const y0 = 8;          // hover target altitude, m: raised well off the ground so a dramatic
+                       // lean or spin recovery has room to dip before it's recoverable
 const Fdist = 3;       // wind gust accel scale, m/s^2
+const lp = 0.3;         // center of pressure offset above center of mass, m: gust also imparts torque
 
 // state: [x, xdot, y, ydot, theta, thetadot], theta = 0 upright
 let s, tUp, best = 0, failed, failText = '';
@@ -81,6 +83,9 @@ function wrapAngle(th) {
     return ((th + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
 }
 function stateError(st) {
+    // x itself is left out of the target on purpose: with Q's x weight at zero the LQR
+    // never feeds back on position anyway (see Q below), so there's nothing to wrap here
+    // either, and the rocket is free to drift and orbit indefinitely.
     const target = [0, 0, y0, 0, 0, 0];
     return st.map((v, i) => (i === 4 ? wrapAngle(v - target[i]) : v - target[i]));
 }
@@ -145,7 +150,9 @@ const hd = dt;
 const I6 = [[1,0,0,0,0,0],[0,1,0,0,0,0],[0,0,1,0,0,0],[0,0,0,1,0,0],[0,0,0,0,1,0],[0,0,0,0,0,1]];
 const Ad = madd(I6, Ac.map(r => r.map(v => v * hd)));
 const Bd = Bc.map(r => r.map(v => v * hd));
-const Q = [[1.5,0,0,0,0,0],[0,0.25,0,0,0,0],[0,0,1.8,0,0,0],[0,0,0,0.25,0,0],[0,0,0,0,24,0],[0,0,0,0,0,2]];
+// x (horizontal position) is weighted zero on purpose: the LQR should only kill horizontal
+// velocity, hold altitude, and hold upright, and never fight to return to a fixed x.
+const Q = [[0,0,0,0,0,0],[0,0.6,0,0,0,0],[0,0,1.8,0,0,0],[0,0,0,0.25,0,0],[0,0,0,0,24,0],[0,0,0,0,0,2]];
 const R = [[0.08, 0], [0, 8]];
 const autoScale = 0.6;
 
@@ -194,7 +201,7 @@ document.getElementById('lqr').addEventListener('click', e => {
 
 // ---------- loop ----------
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
-const scale = 60; // px per meter
+const scale = 20; // px per meter (lowered along with the taller yCeil so the play area still fits the canvas; the rocket sprite is drawn at a fixed pixel size, so it doesn't shrink)
 const groundPx = 440;
 const px = xm => cv.width / 2 + xm * scale;
 const py = ym => groundPx - ym * scale;
@@ -261,6 +268,7 @@ function frame(now) {
             }
             step([T_, phi_]);
             s[1] += wind * dt; // wind as a direct horizontal accel impulse this step
+            s[5] += (m * wind * lp / I) * Math.cos(s[4]) * dt; // and the matching torque, since the gust acts above the center of mass
             tUp += dt;
             if (s[2] <= yGround) { failed = true; failText = 'crashed'; }
             else if (s[2] >= yCeil) { failed = true; failText = 'flew out of range'; }
