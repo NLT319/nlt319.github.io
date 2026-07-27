@@ -5,17 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Robotics · Neel Tripathi</title>
-    <meta name="description" content="Robotics work by Neel Tripathi: Cooper the midair reorienting jumper, an inertial jumping robot, vine robots, and cart-pendulum and double pendulum control.">
+    <meta name="description" content="Robotics work by Neel Tripathi: Cooper the midair reorienting jumper, vine robots, and cart-pendulum and double pendulum control.">
     <link rel="canonical" href="https://nlt319.github.io/portfolio/robotics.html">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Neel Tripathi">
     <meta property="og:title" content="Robotics · Neel Tripathi">
-    <meta property="og:description" content="Cooper the midair reorienting jumper, an inertial jumping robot, vine robots, and cart-pendulum and double pendulum control.">
+    <meta property="og:description" content="Cooper the midair reorienting jumper, vine robots, and cart-pendulum and double pendulum control.">
     <meta property="og:url" content="https://nlt319.github.io/portfolio/robotics.html">
     <meta property="og:image" content="https://nlt319.github.io/images/robotics/cooper-throw-strobe.jpg">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Robotics · Neel Tripathi">
-    <meta name="twitter:description" content="Cooper the midair reorienting jumper, an inertial jumper, vine robots, and control systems.">
+    <meta name="twitter:description" content="Cooper the midair reorienting jumper, vine robots, and control systems.">
     <meta name="twitter:image" content="https://nlt319.github.io/images/robotics/cooper-throw-strobe.jpg">
     <link rel="stylesheet" href="../styles.css">
     <link rel="icon" type="image/x-icon" href="../favicon.gif">
@@ -34,7 +34,7 @@
         <div class="entry">
             <h2 id="cooper">Cooper, a midair reorienting jumper</h2>
             <p class="label">Hawkes Lab, MS project · 2025–2026</p>
-            <p>Cooper is a jumping robot that reorients itself in flight using a reaction wheel, as landing aligned lets it recoup the jump energy through the leg, which is where the name comes from. I designed and assembled the full system, covering the mechanical structure, BLDC actuation, IMU integration, and the embedded electronics, then developed a reduced order dynamics model and compared control strategies in MATLAB, including standard LQR, a braking wheel approach, and an optimized trajectory T-LQR. The best of them runs in C++ on an ESP32, estimating and correcting attitude in real time during ballistic flight on a spring loaded launcher, with telemetry streamed over WiFi for debugging. In testing, the system reliably cancelled rotation once aligned, though gyro drift left some persistent error in the attitude estimate, which further tuning in simulation is meant to address. Code is on <a href="https://github.com/NLT319/Reorienting_Jumper">GitHub</a>.</p>
+            <p>Cooper is a jumping robot that reorients itself in flight using a reaction wheel, as landing aligned lets it recoup the jump energy through the leg, which is where the name comes from. I designed and assembled the full system, covering the mechanical structure, BLDC actuation, IMU integration, and the embedded electronics, packaged compact and mass-constrained, then developed a reduced order dynamics model and compared control strategies in MATLAB, including standard LQR, a braking wheel approach, and an optimized trajectory T-LQR. The braking wheel approach turned out to be the cheapest on energy, as once the wheel is braked there is no further way to control attitude for the rest of the flight, which also makes it the least accurate of the three. The final embedded controller is a PD controller, chosen for simplicity of implementation while maintaining accurate control, and it runs in C++ on an ESP32, estimating and correcting attitude in real time during ballistic flight on a spring loaded launcher, with telemetry streamed over WiFi to a Python debugging tool. In testing, the system reliably cancelled rotation once aligned, though gyro drift left some persistent error in the attitude estimate, which further tuning in simulation is meant to address. Code is on <a href="https://github.com/NLT319/Reorienting_Jumper">GitHub</a>.</p>
             <figure>
                 <img src="../images/robotics/cooper-throw-strobe.jpg" alt="Strobe composite of Cooper thrown across a courtyard, reorienting through its flight arc">
                 <figcaption>A strobe composite of a throw, Cooper reorienting through the arc to land aligned.</figcaption>
@@ -47,15 +47,9 @@
         </div>
 
         <div class="entry">
-            <h2 id="inertial-jumper">Inertial jumping robot</h2>
-            <p class="label">Hawkes Lab · 2022–2024</p>
-            <p>A separate robot from Cooper, this one an inertial jumper whose energy transmission I redesigned, improving jump efficiency by 75%. <!-- TODO: a sentence on what the redesign actually changed, image --></p>
-        </div>
-
-        <div class="entry">
             <h2 id="vine-robots">Vine robots</h2>
-            <p class="label">Hawkes Lab · 2023–2025</p>
-            <p>I contributed structural and mechanical design to the lab's vine robot platforms across two projects. For the large industrial inspection robot, I designed the sensor tip mount that prevents the body material from jamming during eversion, along with the lightweight frame and electronics mounting, and built an automated inflatable column buckling test setup, which helped establish two of the robot's control parameters: the required growth pressure and the minimum retraction pressure. For the millimeter scale rapid vine robots, I designed a latched door test system based on the spring loaded mechanisms found in jellyfish stingers, and collected steady state velocity data as functions of driving pressure, payload mass, and scaled vine size, which the team used to fit coefficients for our dynamics model. This work led to coauthorship on two papers: "High-Velocity, Pressure-Driven Eversion for Rapid Vine Robots," published in IEEE RA-L in July 2025 with Anna Alvarez as first author, and "Large-Scale Vine Robots for Industrial Inspection" in IEEE RAM. The test rigs and tip mount prototypes were machined on the lab's Tormach CNC mill and manual lathe. <!-- TODO: paper links --></p>
+            <p class="label">Hawkes Lab · 2022–2025</p>
+            <p>I contributed structural and mechanical design to the lab's vine robot platforms across two projects. For the large industrial inspection robot, I designed the sensor tip mount that prevents the body material from jamming during eversion, along with the lightweight frame and electronics mounting that relays data to a base station, and built an automated inflatable column buckling test setup, which helped establish two of the robot's control parameters: the required growth pressure and the minimum retraction pressure. For the millimeter scale rapid vine robots, I designed a latched door test system based on the spring loaded mechanisms found in jellyfish stingers, and collected steady state velocity data as functions of driving pressure, payload mass, and scaled vine size, which the team used to fit coefficients for our dynamics model. This work led to coauthorship on two papers: "High-Velocity, Pressure-Driven Eversion for Rapid Vine Robots," published in IEEE RA-L in July 2025 with Anna Alvarez as first author, and "Large-Scale Vine Robots for Industrial Inspection," published in IEEE RAM in September 2025. The test rigs and tip mount prototypes were machined on the lab's Tormach CNC mill and manual lathe. <!-- TODO: paper links --></p>
             <figure>
                 <img src="../images/robotics/vine-tip-test-rig.jpg" alt="Handheld pneumatic test rig for the jellyfish stinger inspired vine robot">
                 <figcaption>The latched door test rig for the millimeter scale rapid vine robots, on the bench.</figcaption>
@@ -68,8 +62,8 @@
 
         <div class="entry">
             <h2 id="cart-pendulum">Cart-pendulum stabilization</h2>
-            <p class="label">Control systems lab · 2025</p>
-            <p>Identified the plant with both parametric and nonparametric methods, doing the identification with the pendulum hanging down, as that configuration is stable enough to test directly, and flipping the sign on gravity in the model afterward to recover the inverted dynamics. Designed an LQR feedback controller, with the Q and R matrices sized using Bryson's rule, and a Kalman filter for state estimation, to stabilize the underactuated cart-pendulum, validated against encoder and motor torque data from the real hardware. <!-- TODO: link the demo video --></p>
+            <p class="label">Control systems lab, team of three · 2025</p>
+            <p>As part of a team of three, I helped identify the plant with both parametric and nonparametric methods, doing the identification with the pendulum hanging down, as that configuration is stable enough to test directly, and flipping the sign on gravity in the model afterward to recover the inverted dynamics, then helped design an LQR feedback controller, with the Q and R matrices sized using Bryson's rule, and a Kalman filter for state estimation, to stabilize the underactuated cart-pendulum, validated against encoder and motor torque data from the real hardware. <!-- TODO: link the demo video --></p>
             <figure>
                 <img src="../images/robotics/cart-pendulum-hardware.jpg" alt="Cart-pendulum hardware next to a labeled state-space diagram">
                 <figcaption>The hardware, alongside the state vector used for identification and control.</figcaption>
@@ -79,7 +73,7 @@
         <div class="entry">
             <h2 id="double-pendulum-arm">Double pendulum arm</h2>
             <p class="label">Robotics design and advanced control courses · 2025–2026</p>
-            <p>The same double pendulum robotic arm across two courses: first stabilized with PID control, then given MPC based trajectory optimization to plan and track motion. <!-- TODO: plots or video --></p>
+            <p>The same double pendulum arm, simulation and benchtop hardware rather than a full 6DOF manipulator, across two courses: first stabilized with PID control, then given MPC based trajectory optimization to plan and track motion, which outperformed a generic LQR controller on the same task. <!-- TODO: plots or video --></p>
         </div>
 
         <hr>
