@@ -77,7 +77,7 @@
         <div class="entry">
             <h2 id="haptic">Haptic force display</h2>
             <p class="label">Course project · 2025</p>
-            <p>A handheld device that creates the sensation of being pulled in a direction using asymmetric acceleration of an eccentric mass through a geared transmission, in a 61 gram package. The design improves on a device published by Amemiya et al., which uses translational rather than rotational motion and is bulkier, with more mass and less force perception. After several physical prototypes, mine outperformed the Amemiya device in user perception testing, producing around 2.5 N of peak force, about what a cup of peanut butter weighs, from a 0.2 lb eccentric mass swinging at 31 in/s at a 0.865 inch radius. However, the kick effect bleeds slightly into the next half rotation, which reduces its efficacy somewhat. <!-- TODO: short demo clip --></p>
+            <p>A handheld device that creates the sensation of being pulled in a direction using asymmetric acceleration of an eccentric mass through a geared transmission, in a 61 gram package. The design improves on a device published by Amemiya, Ando, and Maeda (2006, in Proc. EuroHaptics), a 230 gram prototype that uses translational rather than rotational motion and needs more mass to produce less force perception. After several physical prototypes, mine outperformed the Amemiya device in user perception testing, producing around 2.5 N of peak force, about what a cup of peanut butter weighs, from a 0.2 lb eccentric mass swinging at 31 in/s at a 0.865 inch radius. All five people who tested the device reported a distinct pulling or tugging sensation. However, the kick effect bleeds slightly into the next half rotation, which reduces its efficacy somewhat. <!-- TODO: short demo clip --></p>
             <figure>
                 <img src="../images/mechanical/haptic-cross-section.png" alt="Cross section CAD diagram of the haptic display's geared transmission">
                 <figcaption>Cross section of the transmission: motor, pinion attachment, geared wheels, frame, and end cap.</figcaption>
@@ -86,6 +86,17 @@
                 <img src="../images/mechanical/haptic-prototype.jpg" alt="Handheld prototype of the geared eccentric mass mechanism">
                 <figcaption>The assembled prototype, breadboard control electronics included.</figcaption>
             </figure>
+            <details>
+                <summary>More photos</summary>
+                <figure>
+                    <img src="../images/mechanical/haptic-circuit-schematic.png" alt="Control circuit schematic for the haptic display's motor driver">
+                    <figcaption>The motor control circuit: an Arduino Nano driving a MOSFET off the encoder feedback.</figcaption>
+                </figure>
+                <figure>
+                    <img src="../images/mechanical/haptic-velocity-plot.png" alt="Plot of the tracked eccentric mass velocity over time, showing the kick event">
+                    <figcaption>Tracked velocity of the eccentric mass, with the "kick" that produces the directional pull marked in red.</figcaption>
+                </figure>
+            </details>
         </div>
 
         <div class="entry">
