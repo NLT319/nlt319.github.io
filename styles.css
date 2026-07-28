@@ -139,6 +139,24 @@ img {
     display: block;
 }
 
+.work-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.work-item img {
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.work-item p {
+    margin-bottom: 0;
+}
+
 .tiles {
     display: flex;
     gap: 5px;
