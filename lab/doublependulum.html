@@ -25,11 +25,11 @@
     <div class="container">
         <p><a href="index.html">← lab</a></p>
         <h1>Double pendulum</h1>
-        <p>Grab either mass and throw it. The trace follows the second mass, and since the system is chaotic, two throws that look identical will diverge within a few swings.</p>
+        <p>Grab either mass and throw it. The trace follows the second mass. Since the system is chaotic, two throws that might look identical will diverge within a few swings.</p>
 
         <canvas id="c" width="760" height="480"></canvas>
 
-        <p class="hud">energy: <span id="energy">0</span> J · <span id="state">throw me</span></p>
+        <p class="hud">energy: <span id="energy">0</span> J </p>
 
         <div>
             <button id="reset">reset</button>
@@ -39,7 +39,7 @@
 
         <details>
             <summary>How it works</summary>
-            <p>The full nonlinear equations of motion are integrated with RK4 at 240 steps per second, and the energy readout is really a check on that integrator: it should hold nearly constant with damping off and decay smoothly with it on. Flinging works by tracking the pointer's recent angular motion and handing the released mass that velocity.</p>
+            <p>The full nonlinear equations of motion are integrated with RK4 at 240 steps per second, and the energy readout is a check on that integrator. It should hold constant with damping off and decay smoothly with it on. Flinging works by tracking the pointer's recent angular motion and handing the released mass that velocity.</p>
         </details>
 
         <hr>

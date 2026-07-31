@@ -27,7 +27,7 @@
     <div class="container">
         <p><a href="index.html">← lab</a></p>
         <h1>Suspension tuner</h1>
-        <p>A car drives over a road that never repeats, and each corner of its suspension is a controller you tune live with the sliders while it drives. Kp acts like a spring, Kd like a damper, and the harshness number is the running RMS of vertical body acceleration, so soft and well damped beats stiff.</p>
+        <p>A car drives over a procedurally generated road, and each corner of its suspension is a controller that you can tune live. Kp is an energy storage element that acts like a spring or capacitor and Kd is an energy dissipation element that acts like a damper or resistor. The analog for inductance is inertia, which is the body's mass. The harshness number is the running RMS of vertical body acceleration. A soft and well damped system will beat a stiff one.</p>
 
         <canvas id="c" width="760" height="380"></canvas>
 
@@ -42,7 +42,7 @@
 
         <details>
             <summary>How it works</summary>
-            <p>The car is a half-car model with heave and pitch, and each corner carries half the static weight as preload with a PD controller acting on top of it, trying to hold that corner of the body on the dashed target line above the road. Too little Kp lets the body follow every rise and dip of the terrain, too little Kd lets it wallow after each bump, and too much Kd feeds the road texture straight into the chassis. The terrain itself is a handful of sine waves whose amplitudes and frequencies wander on a mean-reverting random walk, with the phase integrated so frequency changes never cause jumps in the surface.</p>
+            <p>The car is a half-car model with heave and pitch, and each corner carries half the static weight as preload with a PD controller acting on top of it, trying to hold that corner of the body on the dashed target line above the road. Too much Kp forces the body to exactly track every change in the terrain, as if there was no spring, while too little Kp acts as if there was no connection between the wheel and chassis at all. While too little Kd prevents it from stabilizing after a bump, too much Kd causes the body to take too long to stabilize. The terrain itself is a linear combination of sine waves with amplitudes and frequencies wandering on a mean-reverting random walk.</p>
         </details>
 
         <hr>

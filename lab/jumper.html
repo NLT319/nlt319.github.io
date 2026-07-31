@@ -25,7 +25,7 @@
     <div class="container">
         <p><a href="index.html">← lab</a></p>
         <h1>Stick the landing</h1>
-        <p>This is a cartoon of <a href="../portfolio/robotics.html#cooper">Cooper</a>, a jumping robot I built that reorients itself in midair with a reaction wheel. It launches with a random tumble and needs to arrive aligned with the dashed landing line, foot first, so the leg can recoup the jump energy, which is where the name comes from. Land within about eight degrees of the line, and slowly, to stick it, and if it keeps crashing, the show me button toggles control over to the controller until you press it again.</p>
+        <p>This is a demo of <a href="../portfolio/robotics.html#cooper">Cooper</a>, a jumping robot I built that reorients itself in midair with a reaction wheel. It launches with a random tumble and needs to arrive aligned with the dashed landing line, foot aligned to its velocity vector, so the leg can recoup the jump energy (that's why he's named Cooper). Land within about eight degrees of the line with low body angular velocity to stick it. If it keeps crashing, the show me button hands control over to the PD controller.</p>
 
         <canvas id="c" width="760" height="420"></canvas>
 
@@ -40,7 +40,7 @@
 
         <details>
             <summary>How it works</summary>
-            <p>The body and its reaction wheel exchange angular momentum and nothing else, so torquing the wheel one way spins the body the other, and the bar at the top shows how close the wheel is to saturation, past which you have no authority left in that direction. The body leaves the ground aligned with its takeoff velocity, and since the ballistic arc is symmetric, the landing line is the takeoff line mirrored about the vertical axis. The show me toggle runs a saturated PD controller on attitude error, which is what the real robot runs on its ESP32 controller, and it stays engaged across rounds until toggled off, meaning that you can also flip it mid-flight to watch a recovery from whatever the current situation is.</p>
+            <p>The body and its reaction wheel exchange angular momentum and nothing else, so torquing the wheel one way spins the body the other. The bar at the top shows how close the wheel is to saturation, past which you have no authority left in that direction. Since the ballistic arc is symmetric, the landing line is the takeoff line mirrored about the vertical axis. The show me toggle runs a saturated PD controller on attitude error, which is what the real robot runs on its ESP32 controller, and it stays engaged across rounds until toggled off, meaning that you can also flip it mid-flight to watch an attempted recovery from whatever the current situation is. I may give it more torque authority for fun in the future, but first I need to rewrite the controller code to track the actual PD controller behavior. In the real system, the PD controller is always attempting to align the robot to the current velocity vector, meaning it will whip up first and then track down as the robot descends. This is vital in case the terrain altitude changes, as the optimal landing angle is based on the incoming velocity vector.</p>
         </details>
 
         <hr>
@@ -204,7 +204,7 @@ function frame(now) {
     drawCooper(x*ppm, ground - 34 - y*ppm);
 
     ctx.fillStyle = '#000'; ctx.font = '15px Inter, sans-serif';
-    if (phase === 'ready') ctx.fillText('press launch (or space). this is your tumble rate', 20, 60);
+    if (phase === 'ready') ctx.fillText('press launch (or space)', 20, 60);
     if (phase === 'landed') {
         ctx.fillText(verdict + '. launch for the next round', 20, 60);
         ctx.fillText((wrap(th - thTarget)*57.3).toFixed(0) + '° off the landing line / ' + thd.toFixed(1) + ' rad/s', 20, 84);

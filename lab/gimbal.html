@@ -31,7 +31,7 @@
     <div class="container">
         <p><a href="index.html">← lab</a></p>
         <h1>Gimbal</h1>
-        <p>Keep the rocket hovering. Arrow keys or the buttons gimbal the engine and adjust the throttle, and once you have survived a few seconds, wind gusts start arriving, each telegraphed by an arrow a moment before it hits. The LQR button toggles control over to a controller, and then you can try to knock it off balance.</p>
+        <p>Keep the rocket hovering. Arrow keys or the buttons gimbal the engine and adjust the throttle, and once you have survived a few seconds, wind gusts start arriving telegraphed by an arrow. The LQR button hands control over to an LQR controller that stabilizes the rocket's velocity and vertical position.</p>
 
         <canvas id="c" width="760" height="480"></canvas>
 
@@ -48,7 +48,7 @@
 
         <details>
             <summary>How it works</summary>
-            <p>The nonlinear rocket dynamics are integrated with RK4 at 240 steps per second. Thrust is gimbaled by an angle &phi; off the body's centerline, producing both a sideways force component and a torque about the center of mass, as the engine sits below it, meaning the same actuator has to correct drift and attitude at once. The LQR gain matrix is computed in your browser at load time the same way as the cart-pole demo, by numerically linearizing the dynamics about hover and iterating the discrete Riccati equation, generalized here to two control inputs, throttle and gimbal, instead of one. In LQR mode your manual inputs and the wind gusts both enter as disturbances on top of the controller's own commands.</p>
+            <p>Thrust is gimbaled by an angle &phi; off the body's centerline, producing both a sideways force component and a torque about the center of mass. The same actuator has to correct drift and attitude at once. The LQR gain matrix is computed in your browser at load time by numerically linearizing the dynamics about hover and iterating the discrete Riccati equation, generalized here to two control inputs, throttle and gimbal. In LQR mode your manual inputs and the wind gusts both enter as disturbances on top of the controller's own commands.</p>
         </details>
 
         <hr>

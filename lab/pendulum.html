@@ -28,7 +28,7 @@
     <div class="container">
         <p><a href="index.html">← lab</a></p>
         <h1>Cart-pole</h1>
-        <p>Keep the pendulum upright. Arrow keys or the buttons push the cart, and once you have survived a few seconds, random shoves start arriving, each telegraphed by an arrow a moment before it hits. The LQR button toggles control over to a controller, and then you can try to knock it over.</p>
+        <p>Keep the pendulum upright. Arrow keys or the buttons push the cart, and once you have survived a few seconds, random shoves telegraphed by a small arrowstart hitting. The LQR button hands control over to an LQR controller.</p>
 
         <canvas id="c" width="760" height="360"></canvas>
 
@@ -43,7 +43,7 @@
 
         <details>
             <summary>How it works</summary>
-            <p>The nonlinear cart-pole dynamics are integrated with RK4 at 240 steps per second. The LQR gain matrix is computed in your browser at load time by iterating the discrete Riccati equation on a numerically linearized model of the same dynamics, and in LQR mode your pushes and the scheduled shoves enter the loop as disturbance forces the controller has to reject.</p>
+            <p>The LQR gain matrix is computed in your browser at load time by iterating the discrete Riccati equation on a numerically linearized model of the cart pendulum dynamics. In LQR mode your pushes and the scheduled shoves enter the loop as disturbance forces the controller has to reject.</p>
         </details>
 
         <hr>
