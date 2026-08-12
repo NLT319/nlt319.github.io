@@ -207,3 +207,19 @@ figcaption {
     color: #888;
     font-size: 0.85em;
 }
+
+/* marks a citation inline in body text; the browser default yellow is replaced
+   with brackets and secondary grey so the tag can keep marking reference
+   locations without introducing a color */
+mark {
+    background: none;
+    color: #555;
+}
+
+mark::before {
+    content: "[";
+}
+
+mark::after {
+    content: "]";
+}
