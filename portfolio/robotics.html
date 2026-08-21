@@ -31,50 +31,57 @@
 
         <h1>Robotics</h1>
 
-        <div class="entry">
-            <h2 id="cooper">Cooper, a midair reorienting jumper</h2>
-            <p class="label">Hawkes Lab, MS project · 2025–2026</p>
-            <p>Cooper is a jumping robot that reorients itself in flight using a reaction wheel, as landing aligned lets it recoup the jump energy through the leg, which is where the name comes from. I designed and assembled the full system, covering the mechanical structure, BLDC actuation, IMU integration, and the embedded electronics, packaged compact and mass-constrained, then developed a reduced order dynamics model and compared control strategies in MATLAB, including standard LQR, a braking wheel approach, and an optimized trajectory T-LQR. The braking wheel approach turned out to be the cheapest in terms of energy usage, as once the wheel is braked there is no further way to control attitude for the rest of the flight, but this also made it the least robust. The final embedded implementation was a PD controller, chosen for simplicity of implementation while maintaining accurate control even with disturbances. It runs in C++ on an ESP32, estimating and correcting attitude in real time during ballistic flight, with telemetry streamed over WiFi to a Python debugging tool. In testing, the system reliably cancelled rotation once aligned, though gyro drift left some persistent error in the attitude estimate, which further tuning in simulation and testing will address. Code is on <a href="https://github.com/NLT319/Reorienting_Jumper">GitHub</a>.</p>
-            <figure>
-                <img src="../images/robotics/cooper-throw-strobe.jpg" alt="Strobe composite of Cooper thrown across a courtyard, reorienting through its flight arc">
-                <figcaption>A strobe composite image of a throw, Cooper reorienting through the arc to land aligned.</figcaption>
-            </figure>
-            <figure>
-                <img src="../images/robotics/cooper-wheel-assembly.jpg" alt="CAD render of Cooper's reaction wheel and motor assembly">
-                <figcaption>Reaction wheel and motor assembly, mounted for bench testing.</figcaption>
-            </figure>
-            <!-- TODO: verify repo URL, maybe the launcher video -->
-        </div>
+        <div class="group">
+            <p class="group-label">Hawkes Lab</p>
 
-        <div class="entry">
-            <h2 id="vine-robots">Vine robots</h2>
-            <p class="label">Hawkes Lab · 2022–2025</p>
-            <p>I contributed structural and mechanical design to the lab's vine robot platforms across two projects. For the large industrial inspection robot, I designed the sensor tip mount that prevents the body material from jamming during eversion, along with the lightweight frame and electronics mounting that relays data to a base station, and built an automated inflatable column buckling test setup using O-ring-sealed pressure chambers, which helped establish two of the robot's control parameters: the required growth pressure and the minimum retraction pressure. For the millimeter scale rapid vine robots, I designed a latched door test system based on the spring loaded mechanisms found in jellyfish stingers, driven by a pneumatic actuation trigger synchronized with high-speed camera capture, and collected steady state velocity data as functions of driving pressure, payload mass, and scaled vine size, which the team used to fit coefficients for our dynamics model. I iterated through three release door mechanism designs to reduce door inertia. For each prototype, I captured each release at 16,000 fps and analyzed it in Tracker to extract steady state eversion velocity. The final taut thin Dyneema fabric single door design produced faster acceleration than the earlier designs (sturdy double and single door designs) across all tested pressures. Since less of the energy goes into rotating the mass in the door, the vines accelerate faster. I also optimized several of the lightweight frame components for stiffness and mass using SolidWorks FEA, correlating the analysis against physical prototype testing. This work led to coauthorship on two papers: <mark>A. Alvarez, A. Seawright, N. Tripathi, C. Cruz, S. Deng, and E. W. Hawkes, "High-Velocity, Pressure-Driven Eversion for Rapid Vine Robots," IEEE Robotics and Automation Letters, vol. 10, no. 10, pp. 9972-9978, Oct. 2025</mark> and <mark>W. E. Heap, et al., "Large-Scale Vine Robots for Industrial Inspection," IEEE Robotics &amp; Automation Magazine, vol. 32, no. 3, pp. 64-75, Sept. 2025</mark>. The test rigs and tip mount prototypes were machined on the lab's Tormach CNC mill and manual lathe. <!-- TODO: paper links --></p>
-            <figure>
-                <img src="../images/robotics/vine-tip-test-rig.jpg" alt="Handheld pneumatic test rig for the jellyfish stinger inspired vine robot">
-                <figcaption>The latched door test rig for the millimeter scale rapid vine robots, on the bench.</figcaption>
-            </figure>
-            <figure>
-                <img src="../images/robotics/vine-setup-diagram.png" alt="Labeled diagram of the vine robot test setup showing the high volume chamber, air inlet, release mechanism, vine, and latched door">
-                <figcaption>The full experimental setup from the RA-L paper, with the latched door labeled at right.</figcaption>
-            </figure>
-            <figure>
-                <video autoplay muted loop playsinline preload="auto">
-                    <source src="../images/robotics/vine-dyneema-release.mp4" type="video/mp4">
-                </video>
-                <figcaption>The final Dyneema door releasing at 6.28 psi, captured at 16,000 fps and slowed for playback.</figcaption>
-            </figure>
-            <figure>
-                <img src="../images/robotics/vine-mechanism-comparison.jpg" alt="Side-by-side frames of the three door mechanisms mid-eversion at matched pressures around 6 psi, left to right: double door, sturdy single door, and Dyneema">
-                <figcaption>Eversion snapshot across the three door mechanisms, matched to about 6 psi driving pressure. Left to right: double door, sturdy single door, Dyneema.</figcaption>
-            </figure>
-            <details>
-                <summary>From the large industrial inspection robot</summary>
+            <div class="entry">
+                <h2 id="cooper">Cooper, a midair reorienting jumper</h2>
+                <p class="label">MS project · 2025–2026</p>
+                <p>Cooper is a jumping robot that reorients itself in flight using a reaction wheel, as landing aligned lets it recoup the jump energy through the leg, which is where the name comes from. I designed and assembled the full system, covering the mechanical structure, BLDC actuation, IMU integration, and the embedded electronics, packaged compact and mass-constrained, then developed a reduced order dynamics model and compared control strategies in MATLAB, including standard LQR, a braking wheel approach, and an optimized trajectory T-LQR. The braking wheel approach turned out to be the cheapest in terms of energy usage, as once the wheel is braked there is no further way to control attitude for the rest of the flight, but this also made it the least robust. The final embedded implementation was a PD controller, chosen for simplicity of implementation while maintaining accurate control even with disturbances. It runs in C++ on an ESP32, estimating and correcting attitude in real time during ballistic flight, with telemetry streamed over WiFi to a Python debugging tool. In testing, the system reliably cancelled rotation once aligned, though gyro drift left some persistent error in the attitude estimate, which further tuning in simulation and testing will address. Code is on <a href="https://github.com/NLT319/Reorienting_Jumper">GitHub</a>.</p>
+                <figure>
+                    <img src="../images/robotics/cooper-throw-strobe.jpg" alt="Strobe composite of Cooper thrown across a courtyard, reorienting through its flight arc">
+                    <figcaption>A strobe composite image of a throw, Cooper reorienting through the arc to land aligned.</figcaption>
+                </figure>
+                <figure>
+                    <img src="../images/robotics/cooper-wheel-assembly.jpg" alt="CAD render of Cooper's reaction wheel and motor assembly">
+                    <figcaption>Reaction wheel and motor assembly, mounted for bench testing.</figcaption>
+                </figure>
+                <!-- TODO: verify repo URL, maybe the launcher video -->
+            </div>
+
+            <div class="entry">
+                <h2 id="vine-high-speed">High-speed vine robots</h2>
+                <p class="label">Feb 2024 – Oct 2025</p>
+                <p>For the millimeter scale rapid vine robots, I designed a latched door test system based on the spring loaded mechanisms found in jellyfish stingers, driven by a pneumatic actuation trigger synchronized with high-speed camera capture. I collected steady state velocity data as functions of driving pressure, payload mass, and scaled vine size, which the team used to fit coefficients for our dynamics model. I iterated through three release door mechanism designs to reduce door inertia. For each prototype, I captured each release at 16,000 fps and analyzed it in Tracker to extract steady state eversion velocity. The final taut thin Dyneema fabric single door design produced faster acceleration than the earlier designs (sturdy double and single door designs) across all tested pressures. Since less of the energy goes into rotating the mass in the door, the vines accelerate faster. This work led to coauthorship on <mark>A. Alvarez, A. Seawright, N. Tripathi, C. Cruz, S. Deng, and E. W. Hawkes, "High-Velocity, Pressure-Driven Eversion for Rapid Vine Robots," IEEE Robotics and Automation Letters, vol. 10, no. 10, pp. 9972-9978, Oct. 2025</mark>. The test rigs were machined on the lab's Tormach CNC mill and manual lathe. <!-- TODO: paper link --></p>
+                <figure>
+                    <img src="../images/robotics/vine-tip-test-rig.jpg" alt="Handheld pneumatic test rig for the jellyfish stinger inspired vine robot">
+                    <figcaption>The latched door test rig for the millimeter scale rapid vine robots, on the bench.</figcaption>
+                </figure>
+                <figure>
+                    <img src="../images/robotics/vine-setup-diagram.png" alt="Labeled diagram of the vine robot test setup showing the high volume chamber, air inlet, release mechanism, vine, and latched door">
+                    <figcaption>The full experimental setup from the RA-L paper, with the latched door labeled at right.</figcaption>
+                </figure>
+                <figure>
+                    <video autoplay muted loop playsinline preload="auto">
+                        <source src="../images/robotics/vine-dyneema-release.mp4" type="video/mp4">
+                    </video>
+                    <figcaption>The final Dyneema door releasing at 6.28 psi, captured at 16,000 fps and slowed for playback.</figcaption>
+                </figure>
+                <figure>
+                    <img src="../images/robotics/vine-mechanism-comparison.jpg" alt="Side-by-side frames of the three door mechanisms mid-eversion at matched pressures around 6 psi, left to right: double door, sturdy single door, and Dyneema">
+                    <figcaption>Eversion snapshot across the three door mechanisms, matched to about 6 psi driving pressure. Left to right: double door, sturdy single door, Dyneema.</figcaption>
+                </figure>
+            </div>
+
+            <div class="entry">
+                <h2 id="vine-industrial">Large vine robots</h2>
+                <p class="label">Nov 2022 – Feb 2024</p>
+                <p>For the large industrial inspection vine robot, I designed the sensor tip mount that prevents the body material from jamming during eversion, along with the lightweight frame and electronics mounting that relays data to a base station. I also built an automated inflatable column buckling test setup using O-ring-sealed pressure chambers, which helped establish two of the robot's control parameters: the required growth pressure and the minimum retraction pressure. I optimized several of the lightweight frame components for stiffness and mass using SolidWorks FEA, correlating the analysis against physical prototype testing. This work led to coauthorship on <mark>W. E. Heap, et al., "Large-Scale Vine Robots for Industrial Inspection," IEEE Robotics &amp; Automation Magazine, vol. 32, no. 3, pp. 64-75, Sept. 2025</mark>. The tip mount prototypes were machined on the lab's Tormach CNC mill and manual lathe. <!-- TODO: paper link --></p>
                 <figure>
                     <img src="../images/robotics/vine-tip-mount-prototype.jpg" alt="Prototype tip mount mechanism for the large industrial inspection vine robot">
                     <figcaption>An early tip mount prototype for the large industrial inspection robot.</figcaption>
                 </figure>
-            </details>
+            </div>
         </div>
 
         <div class="entry">

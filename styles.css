@@ -223,3 +223,24 @@ mark::before {
 mark::after {
     content: "]";
 }
+
+/* subtle left-rule wrapper for grouping related projects on a portfolio page
+   (e.g. the three Hawkes Lab projects on robotics.html); the group-label sits
+   at the top like a small section marker, with the entries indented past the
+   vertical rule so the group reads as a shallow tree */
+.group {
+    border-left: 1px solid #ccc;
+    padding-left: 20px;
+    margin-left: 4px;
+}
+
+.group-label {
+    font-size: 18px;
+    color: #555;
+    margin-top: 40px;
+    margin-bottom: 0;
+}
+
+.group > .entry:first-of-type h2 {
+    margin-top: 15px;
+}
